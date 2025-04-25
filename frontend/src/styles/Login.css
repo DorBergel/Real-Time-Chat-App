@@ -1,0 +1,21 @@
+.Login-header {
+  margin-top: 3.5rem;
+  margin-bottom: 1.5rem; /* Match the spacing with Register */
+}
+
+.Login-form {
+  margin-top: 3.5rem;
+}
+
+.Login-button {
+  margin-top: 3rem; /* Adjust spacing to match Register */
+}
+
+label {
+  font-size: 13px; /* Match the default font size in Register */
+  margin: 0; /* Remove custom margin to match Register */
+}
+
+.Login-footer {
+  margin: 3rem;
+}

@@ -1,0 +1,25 @@
+1. **User Authentication**
+    - POST `/api/auth/register`: Register a new user.
+    - POST `/api/auth/login`: Log in an existing user.
+    - POST `/api/auth/logout`: Log out the current user.
+    - GET `/api/auth/me`: Get the authenticated user's details.
+
+2. **User Management**
+    - GET `/api/users`: Get a list of all users.
+    - GET `/api/users/:id`: Get details of a specific user.
+    - PUT `/api/users/:id`: Update user details.
+    - DELETE `/api/users/:id`: Delete a user.
+
+3. **Chat Management**
+    - GET `/api/chats`: Get a list of all chats for the authenticated user.
+    - POST `/api/chats`: Create a new chat.
+    - GET `/api/chats/:id`: Get details of a specific chat.
+    - DELETE `/api/chats/:id`: Delete a chat.
+
+4. **Messages**
+    - GET `/api/chats/:chatId/messages`: Get all messages in a specific chat.
+    - POST `/api/chats/:chatId/messages`: Send a new message in a specific chat.
+    - DELETE `/api/chats/:chatId/messages/:messageId`: Delete a specific message.
+
+5. **Real-Time Communication**
+    - WebSocket `/ws`: Establish a WebSocket connection for real-time messaging.

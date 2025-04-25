@@ -1,0 +1,8 @@
+.List {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 70vh;
+    border: 1px solid green;
+    margin: 10px 0;
+}
