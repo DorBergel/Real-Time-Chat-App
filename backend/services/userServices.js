@@ -15,3 +15,24 @@ exports.getUserContacts = async (userId) => {
   // Return the contacts of the user
   return contacts;
 };
+
+exports.getUserChats = async (userId) => {
+  // Find the user by ID and populate the chats field
+  const user = await User.findById(userId).populate("chats");
+  if (!user) {
+    throw new Error("User not found");
+  } 
+  
+  // Return the chats of the user
+  return user.chats;
+};
+
+exports.getUserById = async (userId) => {
+  // Find the user by ID and populate the username field
+  const user = await User.findById(userId).select("username");
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user.username;
+};
