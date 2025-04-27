@@ -1,25 +1,83 @@
-1. **User Authentication**
-    - POST `/api/auth/register`: Register a new user.
-    - POST `/api/auth/login`: Log in an existing user.
-    - POST `/api/auth/logout`: Log out the current user.
-    - GET `/api/auth/me`: Get the authenticated user's details.
+# Real-Time Chat App Backend API
 
-2. **User Management**
-    - GET `/api/users`: Get a list of all users.
-    - GET `/api/users/:id`: Get details of a specific user.
-    - PUT `/api/users/:id`: Update user details.
-    - DELETE `/api/users/:id`: Delete a user.
+## Base URL
+`http://<your-server-domain>/api`
 
-3. **Chat Management**
-    - GET `/api/chats`: Get a list of all chats for the authenticated user.
-    - POST `/api/chats`: Create a new chat.
-    - GET `/api/chats/:id`: Get details of a specific chat.
-    - DELETE `/api/chats/:id`: Delete a chat.
+## Endpoints
 
-4. **Messages**
-    - GET `/api/chats/:chatId/messages`: Get all messages in a specific chat.
-    - POST `/api/chats/:chatId/messages`: Send a new message in a specific chat.
-    - DELETE `/api/chats/:chatId/messages/:messageId`: Delete a specific message.
+### 1. User Authentication
+#### POST `/auth/register`
+- **Description**: Register a new user.
+- **Request Body**:
+    ```json
+    {
+        "username": "string",
+        "password": "string"
+    }
+    ```
+- **Response**:
+    - `201 Created`: User registered successfully.
+    - `400 Bad Request`: Validation error.
 
-5. **Real-Time Communication**
-    - WebSocket `/ws`: Establish a WebSocket connection for real-time messaging.
+#### POST `/auth/login`
+- **Description**: Log in an existing user.
+- **Request Body**:
+    ```json
+    {
+        "username": "string",
+        "password": "string"
+    }
+    ```
+- **Response**:
+    - `200 OK`: Returns a JWT token.
+    - `401 Unauthorized`: Invalid credentials.
+
+---
+
+### 2. Chat Rooms
+#### GET `/rooms`
+- **Description**: Get a list of all chat rooms.
+- **Response**:
+    - `200 OK`: Returns an array of chat rooms.
+
+#### POST `/rooms`
+- **Description**: Create a new chat room.
+- **Request Body**:
+    ```json
+    {
+        "name": "string"
+    }
+    ```
+- **Response**:
+    - `201 Created`: Chat room created successfully.
+    - `400 Bad Request`: Validation error.
+
+---
+
+### 3. Messages
+#### GET `/rooms/:roomId/messages`
+- **Description**: Get all messages in a specific chat room.
+- **Response**:
+    - `200 OK`: Returns an array of messages.
+
+#### POST `/rooms/:roomId/messages`
+- **Description**: Send a new message to a chat room.
+- **Request Body**:
+    ```json
+    {
+        "sender": "string",
+        "content": "string"
+    }
+    ```
+- **Response**:
+    - `201 Created`: Message sent successfully.
+    - `400 Bad Request`: Validation error.
+
+---
+
+### 4. WebSocket
+- **Description**: Real-time communication is handled via WebSocket.
+- **Events**:
+    - `message`: Broadcasts a new message to all clients in a room.
+    - `join`: Notifies when a user joins a room.
+    - `leave`: Notifies when a user leaves a room.
