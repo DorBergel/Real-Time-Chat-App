@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-
+const Chat = require("./Chat");
 const userSchema = mongoose.Schema(
   {
     first_name: {
@@ -36,6 +36,12 @@ const userSchema = mongoose.Schema(
     contacts: {
       type: [mongoose.Schema.Types.ObjectId],
       ref: "User",
+      require: false,
+      unique: false,
+    },
+    chats: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "Chat",
       require: false,
       unique: false,
     },
