@@ -11,5 +11,10 @@ const router = express.Router();
  * @returns {object} - The contacts of the user
  * @throws  {Error} - If the required data is not provided or if there is an error during retrieval
  */
-router.get("/contacts/:userId", verifyUserAccess, authController.getUserContacts);
+router.get(
+  "/contacts/:userId",
+  verifyUserAccess,
+  authController.getUserContacts
+);
 
+module.exports = router;

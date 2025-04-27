@@ -10,6 +10,7 @@ require("./config/db").connectDB();
 
 // Routes
 const authRouter = require("./routes/auth");
+const userRouter = require("./routes/user");
 
 // Initialize Express app
 var app = express();
@@ -21,6 +22,7 @@ app.use(cors());
 
 // Use routes
 app.use("/api/auth", authRouter);
+app.use("/api/user", userRouter);
 
 // Create HTTP server
 const server = http.createServer(app);

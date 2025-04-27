@@ -1,4 +1,4 @@
-exports.handleRegisterSubmit = (event) => {
+export const handleRegisterSubmit = (event) => {
   event.preventDefault();
   const formData = new FormData(event.target);
   const firstName = formData.get("firstName");
@@ -63,7 +63,7 @@ exports.handleRegisterSubmit = (event) => {
     });
 };
 
-exports.handleLoginSubmit = (event) => {
+export const handleLoginSubmit = (event) => {
   event.preventDefault();
   const formData = new FormData(event.target);
   const username = formData.get("username");

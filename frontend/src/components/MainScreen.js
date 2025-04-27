@@ -1,10 +1,12 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import Button from "react-bootstrap/Button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "../styles/MainScreen.css";
+import { decode } from "jsonwebtoken";
 
 function MainScreen() {
   const [listState, setListState] = useState("Contacts");
+  const [contactsList, setContactsList] = useState([]);
 
   const handleContactsButtonClick = () => {
     console.log("Contacts list button clicked");
@@ -16,13 +18,31 @@ function MainScreen() {
     setListState("Chats");
   };
 
-  // Last update: I added a new button to the toolbar to switch between contacts and chats lists.
-  // The button changes its color based on the selected list. I also added a console log to each button click event.
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const decodedToken = decode(token);
 
-  //TODO : Add a list of contacts and chats to the List component.
-  //TODO : Add a button to create a new chat. The button should be placed in the toolbar and should be styled like the other buttons.
-  //TODO : Add a button to delete a chat. The button should be placed in the List component and should be styled like the other buttons.
-  //TODO : Add a button to delete a contact. The button should be placed in the List component and should be styled like the other buttons.
+    fetch(
+      `${process.env.REACT_APP_API_URL}/api/user/contacts/${decodedToken.id}`,
+      {
+        method: "GET",
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    ).then((response) => {
+      if (response.ok) {
+        response.json().then((data) => {
+          console.log("Contacts data:", data);
+          setContactsList(data.contacts);
+        });
+      } else {
+        console.error("Failed to fetch contacts");
+      }
+    });
+  }, []);
+
   return (
     <div className="MainScreen">
       <div className="Main-header">
@@ -57,7 +77,15 @@ function MainScreen() {
       </div>
 
       <div className="List">
-        
+        {contactsList.length > 0 ? (
+          contactsList.map((contact, index) => (
+            <div key={index} className="contact-item">
+              <p>{contact.username}</p>{" "}
+            </div>
+          ))
+        ) : (
+          <p>No contacts available</p>
+        )}
       </div>
     </div>
   );
