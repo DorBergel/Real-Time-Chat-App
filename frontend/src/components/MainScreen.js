@@ -3,6 +3,7 @@ import Button from "react-bootstrap/Button";
 import { useEffect, useState } from "react";
 import "../styles/MainScreen.css";
 import { decode } from "jsonwebtoken";
+import { Route } from "react-router-dom";
 
 function MainScreen() {
   const [listState, setListState] = useState("Contacts");
@@ -24,17 +25,18 @@ function MainScreen() {
 
   const handleContactItemClick = (contactId) => {
     console.log("Contact item clicked:", contactId);
-    {/* Navigate to the chat screen with the selected contactId */}
+    {
+      /* Navigate to the chat screen with the selected contactId */
+    }
   };
 
   const handleChatItemClick = (chatId) => {
     console.log("Chat item clicked:", chatId);
-    {/* Navigate to the chat screen with the selected chatId */}
-  }
+    window.location.href = `/chat/${chatId}`;
+  };
 
   // Fetch contacts from the server when the component mounts
   useEffect(() => {
-    
     fetch(
       `${process.env.REACT_APP_API_URL}/api/user/contacts/${decodedToken.id}`,
       {
@@ -58,7 +60,6 @@ function MainScreen() {
 
   // Fetch chats from the server when the component mounts
   useEffect(() => {
-
     fetch(
       `${process.env.REACT_APP_API_URL}/api/user/chats/${decodedToken.id}`,
       {
@@ -79,7 +80,8 @@ function MainScreen() {
       } else {
         console.error("Failed to fetch chats");
       }
-  })}, []);
+    });
+  }, []);
 
   return (
     <div className="MainScreen">
@@ -123,7 +125,9 @@ function MainScreen() {
                 className="item"
                 onClick={() => handleContactItemClick(contact._id)}
               >
-                <h3>{contact.first_name} {contact.last_name}</h3>
+                <h3>
+                  {contact.first_name} {contact.last_name}
+                </h3>
                 <p>AKA {contact.username}</p>
               </div>
             ))}
@@ -145,6 +149,5 @@ function MainScreen() {
       </div>
     </div>
   );
-
 }
 export default MainScreen;

@@ -5,6 +5,7 @@ import Register from "./components/Register";
 import Login from "./components/Login";
 import MainScreen from "./components/MainScreen";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Chat from "./components/Chat";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -15,6 +16,7 @@ root.render(
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/main" element={<MainScreen />} />
+          <Route path="/chat/:chatId" element={<Chat />} />
         </Routes>
       </div>
     </Router>
