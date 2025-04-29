@@ -1,0 +1,38 @@
+.chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    overflow-y: auto;
+    height: 70vh;
+    border: 1px solid green;
+}
+
+.message-div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px;
+}
+
+.sent {
+    
+    margin-inline-end: auto;
+    background-color: #e0ffe0;
+}
+
+.received {
+    margin-inline-start: auto;
+    background-color: #e0e0ff;
+}
+
+.author {
+    font-weight: bold;
+}
+
+.content {
+    max-width: 70%;
+    padding: 5px 3px;
+    border-radius: 5px;
+    overflow-wrap: break-word;
+}
