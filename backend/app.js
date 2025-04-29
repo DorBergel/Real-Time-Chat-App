@@ -12,6 +12,7 @@ require("./config/db").connectDB();
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
 const chatRouter = require("./routes/chat");
+const messageRouter = require("./routes/message");
 
 // Initialize Express app
 var app = express();
@@ -25,6 +26,7 @@ app.use(cors());
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/chat", chatRouter);
+app.use("/api/message", messageRouter);
 
 // Create HTTP server
 const server = http.createServer(app);
