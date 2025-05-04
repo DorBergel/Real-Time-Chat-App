@@ -6,6 +6,7 @@
     overflow-y: auto;
     height: 70vh;
     border: 1px solid green;
+    scroll-behavior: smooth;
 }
 
 .message-div {

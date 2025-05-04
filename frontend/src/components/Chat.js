@@ -20,42 +20,15 @@ function Chat() {
 
     socket.onopen = () => {
       console.log("WebSocket connection established");
-    };
+      socket.send(JSON.stringify({type: "join", chatId: chatId}));
+    }
 
     socket.onmessage = (event) => {
-      console.log("New message received:", event.data);
-      const message = JSON.parse(event.data);
-
-      console.log("Message", message);
-      console.log("message type", typeof message);
-      console.log("Message content", message.content);
-
-      fetch(`${process.env.REACT_APP_API_URL}/api/message/${chatId}`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          userId: decode(token).id,
-          chatId: chatId,
-          content: message.content,
-        }),
-      })
-        .then((response) => {
-          if (response.ok) {
-            return response.json();
-          } else {
-            throw new Error("Failed to send message");
-          }
-        })
-        .then((data) => {
-          console.log("Message sent successfully:", data);
-          setMessages((prevMessages) => [...prevMessages, data.newMessage]);
-        })
-        .catch((error) => {
-          console.error("Error sending message:", error);
-        });
+      const data = JSON.parse(event.data);
+      console.log("WebSocket message received:", data);
+      if (data.chatId === chatId) {
+        setMessages((prevMessages) => [...prevMessages, data.message]);
+      }
     };
 
     socket.onclose = () => {
@@ -63,6 +36,11 @@ function Chat() {
     };
 
     setSocket(socket);
+
+    return () => {
+      socket.close();
+      console.log("WebSocket connection closed on component unmount");
+    }
   }, [chatId]);
 
   // Effect to fetch chat data
@@ -105,21 +83,28 @@ function Chat() {
     });
   }, [chatId, token]);
 
+  // Effect to scroll to the bottom of the chat messages
+  // This effect runs every time the `messages` state changes
+  useEffect(() => {
+    const chatMessages = document.querySelector(".chat-messages");
+    if (chatMessages) {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+  }, [messages]); // Trigger this effect whenever `messages` updates
+
   const handleSubmit = (event) => {
     event.preventDefault();
+    console.log("message", event.target.message.value);
     const message = event.target.message.value;
-    if (message && socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(
-        JSON.stringify({
-          chatId: chatId,
-          content: message,
-        })
-      );
-    }
+    socket.send(JSON.stringify({type: "message", chatId: chatId, message: message}));
+    console.log("Message sent:", message);
 
     event.target.reset();
   };
+
+
   console.log("messages", messages);
+
   return (
     <div className="chat-container">
       <div className="chat-header">
