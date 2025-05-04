@@ -103,7 +103,7 @@ export const handleLoginSubmit = (event) => {
       localStorage.setItem("token", data.token);
 
       // Redirect to home page or perform other actions
-      window.location.href = "/";
+      window.location.href = "/main";
     })
     .catch((error) => {
       console.error("Error:", error.message);
