@@ -20,8 +20,8 @@ function Chat() {
 
     socket.onopen = () => {
       console.log("WebSocket connection established");
-      socket.send(JSON.stringify({type: "join", chatId: chatId}));
-    }
+      socket.send(JSON.stringify({ type: "join", chatId: chatId }));
+    };
 
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -40,7 +40,7 @@ function Chat() {
     return () => {
       socket.close();
       console.log("WebSocket connection closed on component unmount");
-    }
+    };
   }, [chatId]);
 
   // Effect to fetch chat data
@@ -61,7 +61,7 @@ function Chat() {
         console.error("Failed to fetch chat");
       }
     });
-  }, []);
+  }, []); // Fetch chat data only once when the component mounts
 
   // Effect to fetch messages
   useEffect(() => {
@@ -81,7 +81,7 @@ function Chat() {
         console.error("Failed to fetch messages");
       }
     });
-  }, [chatId, token]);
+  }, [chatId, token]); // Fetch messages when chatId or token changes
 
   // Effect to scroll to the bottom of the chat messages
   // This effect runs every time the `messages` state changes
@@ -90,20 +90,29 @@ function Chat() {
     if (chatMessages) {
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
+    console.log("messages", messages);
   }, [messages]); // Trigger this effect whenever `messages` updates
 
   const handleSubmit = (event) => {
     event.preventDefault();
     console.log("message", event.target.message.value);
     const message = event.target.message.value;
-    socket.send(JSON.stringify({type: "message", chatId: chatId, message: message}));
+    const author = decode(token).id;
+
+    console.log("author", author);
+
+    socket.send(
+      JSON.stringify({
+        type: "message",
+        chatId: chatId,
+        message: message,
+        userId: author,
+      })
+    );
     console.log("Message sent:", message);
 
     event.target.reset();
   };
-
-
-  console.log("messages", messages);
 
   return (
     <div className="chat-container">
@@ -126,7 +135,7 @@ function Chat() {
               </p>
               <hr></hr>
               <p className="content">
-                {message.content ? message.content : ""}
+                {message.content ? message.content : "error loading content"}
               </p>
             </div>
           );

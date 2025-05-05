@@ -1,6 +1,11 @@
 const webSocket = require("ws");
 const logger = require("../utils/logger");
 const Message = require("../models/Message");
+const User = require("../models/User");
+const Chat = require("../models/Chat");
+const { model } = require("mongoose");
+
+let lastMessage = null;
 
 // websocket flow:
 // 1. client connect to server
@@ -20,7 +25,7 @@ exports.setUpWebSocket = (server) => {
 
     ws.on("message", async (data) => {
       const parsedData = JSON.parse(data);
-      const { type, chatId, message } = parsedData;
+      const { type, chatId, message, userId } = parsedData;
 
       if (type === "join") {
         logger.logInfoMsg(`Client joined chat: ${chatId}`);
@@ -34,31 +39,69 @@ exports.setUpWebSocket = (server) => {
         logger.logInfoMsg(`Received message in chat ${chatId}: ${message}`);
 
         try {
+          logger.logInfoMsg("Saving message to database...");
+          logger.logDebugMsg("author:", userId);
           // Create and save the new message
-          const newMessage = new Message({ author: ws.userId, chat: chatId, content: message });
+          const newMessage = new Message({
+            author: userId,
+            chat: chatId,
+            content: message,
+          });
           const savedMessage = await newMessage.save();
-          console.log("Saved message:", savedMessage);
+          // Populate the author field with User username
+          const populatedMessage = await Message.findById(
+            savedMessage._id
+          ).populate({
+            path: "author",
+            model: User,
+            select: "username",
+          });
+          logger.logInfoMsg("Message saved:", savedMessage);
 
           // Broadcast the message to other clients in the same chat room
           if (chatRooms.has(chatId)) {
             chatRooms.get(chatId).forEach((client) => {
               if (client !== ws && client.readyState === webSocket.OPEN) {
-                client.send(JSON.stringify({ chatId, message: savedMessage }));
+                client.send(
+                  JSON.stringify({ chatId, message: populatedMessage })
+                );
               }
             });
           }
+          lastMessage = populatedMessage;
         } catch (err) {
           logger.logErrorMsg("Error saving message:", err);
         }
       }
     });
 
-    ws.on("close", () => {
+    ws.on("close", async () => {
       logger.logInfoMsg("Client disconnected");
+
+      // Remove the client from the chat room
       if (ws.chatId && chatRooms.has(ws.chatId)) {
         chatRooms.get(ws.chatId).delete(ws);
+
+        // If the chat room is empty, remove it from the map
         if (chatRooms.get(ws.chatId).size === 0) {
           chatRooms.delete(ws.chatId);
+        }
+      }
+
+      // Update lastMessage in the Chat model populated with the last message content
+      if (lastMessage) {
+        try {
+          await Chat.findByIdAndUpdate(
+            lastMessage.chat, // Use the chat ID from the last message
+            {
+              lastMessage: lastMessage.content, // Update with the message content
+              lastMessageAt: new Date(), // Optionally update the timestamp
+            },
+            { new: true } // Return the updated document
+          );
+          logger.logInfoMsg("Chat lastMessage updated successfully");
+        } catch (err) {
+          logger.logErrorMsg("Error updating Chat lastMessage:", err);
         }
       }
     });
