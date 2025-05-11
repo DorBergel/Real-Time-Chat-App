@@ -1,47 +1,26 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { decode } from "jsonwebtoken";
 import "../styles/Chat.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
+import { useWebSocket } from "../context/WebSocketContext";
 
 function Chat() {
+  const { socket } = useWebSocket();
   const { chatId } = useParams();
   const [chatData, setChatData] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [socket, setSocket] = useState(null);
   const token = localStorage.getItem("token");
 
-  // Effect to establish WebSocket connection
+  // Effect for debugging
   useEffect(() => {
-    const socket = new WebSocket(`${process.env.REACT_APP_SOCKET_URL}`);
-
-    socket.onopen = () => {
-      console.log("WebSocket connection established");
-      socket.send(JSON.stringify({ type: "join", chatId: chatId }));
-    };
-
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log("WebSocket message received:", data);
-      if (data.chatId === chatId) {
-        setMessages((prevMessages) => [...prevMessages, data.message]);
-      }
-    };
-
-    socket.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
-
-    setSocket(socket);
-
-    return () => {
-      socket.close();
-      console.log("WebSocket connection closed on component unmount");
-    };
-  }, [chatId]);
+    console.log("ChatId:", chatId);
+    console.log("Token:", token);
+    console.log("Socket:", socket);
+  }, [chatId, token]);
 
   // Effect to fetch chat data
   useEffect(() => {
@@ -100,18 +79,20 @@ function Chat() {
     const author = decode(token).id;
 
     console.log("author", author);
+    if (socket) {
+      socket.send(
+        JSON.stringify({
+          type: "chatMessage",
+          chatId: chatId,
+          message: message,
+        })
+      );
+      console.log("Message sent:", message);
 
-    socket.send(
-      JSON.stringify({
-        type: "message",
-        chatId: chatId,
-        message: message,
-        userId: author,
-      })
-    );
-    console.log("Message sent:", message);
-
-    event.target.reset();
+      event.target.reset();
+    } else {
+      console.error("Socket is not connected");
+    }
   };
 
   return (

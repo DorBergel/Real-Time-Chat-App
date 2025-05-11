@@ -1,17 +1,20 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import Button from "react-bootstrap/Button";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import "../styles/MainScreen.css";
 import { decode } from "jsonwebtoken";
-import { Route } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useWebSocket } from "../context/WebSocketContext";
 
 function MainScreen() {
   const [listState, setListState] = useState("Contacts");
   const [contactsList, setContactsList] = useState([]);
   const [chatsList, setChatsList] = useState([]);
+  const { socket, setSocket } = useWebSocket(); // Access WebSocket context
 
   const token = localStorage.getItem("token");
   const decodedToken = decode(token);
+  const navigate = useNavigate();
 
   const handleContactsButtonClick = () => {
     console.log("Contacts list button clicked");
@@ -32,7 +35,14 @@ function MainScreen() {
 
   const handleChatItemClick = (chatId) => {
     console.log("Chat item clicked:", chatId);
-    window.location.href = `/chat/${chatId}`;
+    socket.send(
+      JSON.stringify({
+        type: "join",
+        chatId: chatId,
+        message: chatId,
+      })
+    );
+    navigate(`/chat/${chatId}`);
   };
 
   // Fetch contacts from the server when the component mounts
@@ -82,6 +92,24 @@ function MainScreen() {
       }
     });
   }, []);
+
+  // Effect to establish WebSocket connection
+  useEffect(() => {
+    const newSocket = new WebSocket(`${process.env.REACT_APP_SOCKET_URL}`);
+
+    newSocket.onopen = () => {
+      console.log("WebSocket connection established");
+      setSocket(newSocket); // Store the WebSocket in context
+    };
+
+    newSocket.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+
+    newSocket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+  }, [setSocket]);
 
   return (
     <div className="MainScreen">
