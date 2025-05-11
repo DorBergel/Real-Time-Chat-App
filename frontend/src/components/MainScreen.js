@@ -10,7 +10,7 @@ function MainScreen() {
   const [listState, setListState] = useState("Contacts");
   const [contactsList, setContactsList] = useState([]);
   const [chatsList, setChatsList] = useState([]);
-  const { socket, setSocket } = useWebSocket(); // Access WebSocket context
+  const socket = useWebSocket();
 
   const token = localStorage.getItem("token");
   const decodedToken = decode(token);
@@ -44,6 +44,14 @@ function MainScreen() {
     );
     navigate(`/chat/${chatId}`);
   };
+
+  // Effect for socket connection
+  useEffect(() => {
+    if (socket) {
+      console.log("Socket already exists:", socket.id);
+      // Optionally, you can perform additional setup here if needed
+    }
+  }, [socket]);
 
   // Fetch contacts from the server when the component mounts
   useEffect(() => {
@@ -93,23 +101,6 @@ function MainScreen() {
     });
   }, []);
 
-  // Effect to establish WebSocket connection
-  useEffect(() => {
-    const newSocket = new WebSocket(`${process.env.REACT_APP_SOCKET_URL}`);
-
-    newSocket.onopen = () => {
-      console.log("WebSocket connection established");
-      setSocket(newSocket); // Store the WebSocket in context
-    };
-
-    newSocket.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
-
-    newSocket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-  }, [setSocket]);
 
   return (
     <div className="MainScreen">

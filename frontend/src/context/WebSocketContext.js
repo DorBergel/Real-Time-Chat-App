@@ -1,45 +1,65 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 const WebSocketContext = createContext(null);
 
+let globalSocket = null;
+
 export const WebSocketProvider = ({ children }) => {
-  const [socket, setSocket] = useState(null);
+  const [socketInstance, setSocketInstance] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const newSocket = new WebSocket(
-      `${process.env.REACT_APP_SOCKET_URL}?token=${token}`
-    );
+    if (!globalSocket || globalSocket.readyState === WebSocket.CLOSED) {
+      const token = localStorage.getItem("token");
+      globalSocket = new WebSocket(`${process.env.REACT_APP_SOCKET_URL}?token=${token}`);
+      globalSocket.id = Math.random().toString(36).substring(2, 15);
+      console.log("🔌 New WebSocket connection established with ID:", globalSocket.id);
 
-    newSocket.onopen = () => {
-      console.log("WebSocket connection established");
-      setSocket(newSocket); // Correctly set the WebSocket instance
-    };
+      globalSocket.onopen = () => {
+        console.log("WebSocket is open with ID:", globalSocket.id);
+      };
 
-    newSocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log("WebSocket message received:", data);
-      // Handle incoming messages here
-    };
+      globalSocket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log("Message on ID:", globalSocket.id, data);
 
-    newSocket.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
+          // Handle messages based on the user location in the app
+          
 
-    newSocket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
+        } catch (err) {
+          console.warn("Invalid message received:", event.data);
+        }
+      };
+
+      globalSocket.onclose = () => {
+        console.log("WebSocket closed with ID:", globalSocket.id);
+      };
+
+      globalSocket.onerror = (err) => {
+        console.error("WebSocket error on ID:", globalSocket.id, err);
+      };
+    } else {
+      console.log("Socket already exists:", globalSocket.id);
+    }
+
+    setSocketInstance(globalSocket);
 
     return () => {
-      newSocket.close(); // Clean up the WebSocket connection on unmount
+      console.log("WebSocketProvider unmounted — socket stays alive.");
     };
   }, []);
 
   return (
-    <WebSocketContext.Provider value={{ socket, setSocket }}>
+    <WebSocketContext.Provider value={socketInstance}>
       {children}
     </WebSocketContext.Provider>
   );
 };
 
-export const useWebSocket = () => useContext(WebSocketContext);
+export const useWebSocket = () => {
+  const context = useContext(WebSocketContext);
+  if (context === undefined) {
+    throw new Error("useWebSocket must be used within a WebSocketProvider");
+  }
+  return context;
+};

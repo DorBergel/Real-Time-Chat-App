@@ -9,7 +9,7 @@ import Form from "react-bootstrap/Form";
 import { useWebSocket } from "../context/WebSocketContext";
 
 function Chat() {
-  const { socket } = useWebSocket();
+  const socket = useWebSocket();
   const { chatId } = useParams();
   const [chatData, setChatData] = useState(null);
   const [messages, setMessages] = useState([]);
