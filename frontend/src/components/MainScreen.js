@@ -10,7 +10,27 @@ function MainScreen() {
   const [listState, setListState] = useState("Contacts");
   const [contactsList, setContactsList] = useState([]);
   const [chatsList, setChatsList] = useState([]);
-  const socket = useWebSocket();
+  const { socketInstance, registerMessageHandler, unregisterMessageHandler } = useWebSocket();
+
+  useEffect(() => {
+    const handleMessage = (data) => {
+      console.log("Received message:", data);
+      setChatsList((prevChats) => {
+        const updatedChats = prevChats.map((chat) => {
+          if (chat._id === data.chatId) {
+            return { ...chat, lastMessage: data.message.content };
+          }
+          return chat;
+        });
+        return updatedChats;
+      });
+    };
+    registerMessageHandler(handleMessage);
+
+    return () => {
+      unregisterMessageHandler(handleMessage);
+    };
+  }, [registerMessageHandler, unregisterMessageHandler]);
 
   const token = localStorage.getItem("token");
   const decodedToken = decode(token);
@@ -35,7 +55,7 @@ function MainScreen() {
 
   const handleChatItemClick = (chatId) => {
     console.log("Chat item clicked:", chatId);
-    socket.send(
+    socketInstance.send(
       JSON.stringify({
         type: "join",
         chatId: chatId,
@@ -47,14 +67,15 @@ function MainScreen() {
 
   // Effect for socket connection
   useEffect(() => {
-    if (socket) {
-      console.log("Socket already exists:", socket.id);
+    if (socketInstance) {
+      console.log("Socket already exists:", socketInstance.id);
       // Optionally, you can perform additional setup here if needed
     }
-  }, [socket]);
+  }, [socketInstance]);
 
   // Fetch contacts from the server when the component mounts
   useEffect(() => {
+    console.log("Fetching contacts...");
     fetch(
       `${process.env.REACT_APP_API_URL}/api/user/contacts/${decodedToken.id}`,
       {
@@ -78,6 +99,7 @@ function MainScreen() {
 
   // Fetch chats from the server when the component mounts
   useEffect(() => {
+    console.log("Fetching chats...");
     fetch(
       `${process.env.REACT_APP_API_URL}/api/user/chats/${decodedToken.id}`,
       {

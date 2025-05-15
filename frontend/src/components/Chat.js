@@ -1,4 +1,4 @@
-import React from "react";
+import React, { use } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { decode } from "jsonwebtoken";
@@ -9,17 +9,33 @@ import Form from "react-bootstrap/Form";
 import { useWebSocket } from "../context/WebSocketContext";
 
 function Chat() {
-  const socket = useWebSocket();
   const { chatId } = useParams();
   const [chatData, setChatData] = useState(null);
   const [messages, setMessages] = useState([]);
   const token = localStorage.getItem("token");
 
+  const { socketInstance, registerMessageHandler, unregisterMessageHandler } = useWebSocket();
+
+  useEffect(() => {
+    const handleMessage = (data) => {
+      console.log("Received message:", data);
+      setMessages((prevMessages) => [
+        ...prevMessages, data.message
+      ]);
+    };
+
+    registerMessageHandler(handleMessage);
+
+    return () => {
+      unregisterMessageHandler(handleMessage);
+    };
+  }, [registerMessageHandler, unregisterMessageHandler]);
+
   // Effect for debugging
   useEffect(() => {
     console.log("ChatId:", chatId);
     console.log("Token:", token);
-    console.log("Socket:", socket);
+    console.log("Socket:", socketInstance);
   }, [chatId, token]);
 
   // Effect to fetch chat data
@@ -79,8 +95,8 @@ function Chat() {
     const author = decode(token).id;
 
     console.log("author", author);
-    if (socket) {
-      socket.send(
+    if (socketInstance) {
+      socketInstance.send(
         JSON.stringify({
           type: "chatMessage",
           chatId: chatId,
@@ -88,7 +104,6 @@ function Chat() {
         })
       );
       console.log("Message sent:", message);
-
       event.target.reset();
     } else {
       console.error("Socket is not connected");

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useRef, useContext, useEffect, useState } from "react";
 
 const WebSocketContext = createContext(null);
 
@@ -6,6 +6,7 @@ let globalSocket = null;
 
 export const WebSocketProvider = ({ children }) => {
   const [socketInstance, setSocketInstance] = useState(null);
+  const messageHandler = useRef(null);
 
   useEffect(() => {
     if (!globalSocket || globalSocket.readyState === WebSocket.CLOSED) {
@@ -24,6 +25,11 @@ export const WebSocketProvider = ({ children }) => {
           console.log("Message on ID:", globalSocket.id, data);
 
           // Handle messages based on the user location in the app
+          if(messageHandler.current) {
+            messageHandler.current(data);
+          } else {
+            console.warn("No message handler set for WebSocket ID:", globalSocket.id);
+          }
           
 
         } catch (err) {
@@ -49,8 +55,16 @@ export const WebSocketProvider = ({ children }) => {
     };
   }, []);
 
+  const registerMessageHandler = (handler) => {
+    messageHandler.current = handler;
+  }
+
+  const unregisterMessageHandler = () => {
+    messageHandler.current = null;
+  }
+
   return (
-    <WebSocketContext.Provider value={socketInstance}>
+    <WebSocketContext.Provider value={{socketInstance, registerMessageHandler, unregisterMessageHandler}}>
       {children}
     </WebSocketContext.Provider>
   );
