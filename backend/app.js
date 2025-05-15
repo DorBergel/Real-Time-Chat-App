@@ -4,7 +4,7 @@ const logger = require("./utils/logger");
 const http = require("http");
 const socketIO = require("socket.io");
 const cors = require("cors");
-const { setUpWebSocket } = require("./sockets/chatSocket");
+const { initializeChatWebSocket } = require("./sockets/chatSocket");
 
 // Connect to the database
 require("./config/db").connectDB();
@@ -49,6 +49,6 @@ server.listen(PORT, (error) => {
   }
 });
 
-setUpWebSocket(server);
+initializeChatWebSocket(server);
 
 module.exports = app;

@@ -1,17 +1,40 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import Button from "react-bootstrap/Button";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import "../styles/MainScreen.css";
 import { decode } from "jsonwebtoken";
-import { Route } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useWebSocket } from "../context/WebSocketContext";
 
 function MainScreen() {
   const [listState, setListState] = useState("Contacts");
   const [contactsList, setContactsList] = useState([]);
   const [chatsList, setChatsList] = useState([]);
+  const { socketInstance, registerMessageHandler, unregisterMessageHandler } = useWebSocket();
+
+  useEffect(() => {
+    const handleMessage = (data) => {
+      console.log("Received message:", data);
+      setChatsList((prevChats) => {
+        const updatedChats = prevChats.map((chat) => {
+          if (chat._id === data.chatId) {
+            return { ...chat, lastMessage: data.message.content };
+          }
+          return chat;
+        });
+        return updatedChats;
+      });
+    };
+    registerMessageHandler(handleMessage);
+
+    return () => {
+      unregisterMessageHandler(handleMessage);
+    };
+  }, [registerMessageHandler, unregisterMessageHandler]);
 
   const token = localStorage.getItem("token");
   const decodedToken = decode(token);
+  const navigate = useNavigate();
 
   const handleContactsButtonClick = () => {
     console.log("Contacts list button clicked");
@@ -32,11 +55,27 @@ function MainScreen() {
 
   const handleChatItemClick = (chatId) => {
     console.log("Chat item clicked:", chatId);
-    window.location.href = `/chat/${chatId}`;
+    socketInstance.send(
+      JSON.stringify({
+        type: "join",
+        chatId: chatId,
+        message: chatId,
+      })
+    );
+    navigate(`/chat/${chatId}`);
   };
+
+  // Effect for socket connection
+  useEffect(() => {
+    if (socketInstance) {
+      console.log("Socket already exists:", socketInstance.id);
+      // Optionally, you can perform additional setup here if needed
+    }
+  }, [socketInstance]);
 
   // Fetch contacts from the server when the component mounts
   useEffect(() => {
+    console.log("Fetching contacts...");
     fetch(
       `${process.env.REACT_APP_API_URL}/api/user/contacts/${decodedToken.id}`,
       {
@@ -60,6 +99,7 @@ function MainScreen() {
 
   // Fetch chats from the server when the component mounts
   useEffect(() => {
+    console.log("Fetching chats...");
     fetch(
       `${process.env.REACT_APP_API_URL}/api/user/chats/${decodedToken.id}`,
       {
@@ -82,6 +122,7 @@ function MainScreen() {
       }
     });
   }, []);
+
 
   return (
     <div className="MainScreen">

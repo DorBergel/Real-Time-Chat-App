@@ -1,47 +1,42 @@
-import React from "react";
-import { useParams } from "react-router-dom";
+import React, { use } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { decode } from "jsonwebtoken";
 import "../styles/Chat.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
+import { useWebSocket } from "../context/WebSocketContext";
 
 function Chat() {
   const { chatId } = useParams();
   const [chatData, setChatData] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [socket, setSocket] = useState(null);
   const token = localStorage.getItem("token");
 
-  // Effect to establish WebSocket connection
+  const { socketInstance, registerMessageHandler, unregisterMessageHandler } = useWebSocket();
+
   useEffect(() => {
-    const socket = new WebSocket(`${process.env.REACT_APP_SOCKET_URL}`);
-
-    socket.onopen = () => {
-      console.log("WebSocket connection established");
-      socket.send(JSON.stringify({ type: "join", chatId: chatId }));
+    const handleMessage = (data) => {
+      console.log("Received message:", data);
+      setMessages((prevMessages) => [
+        ...prevMessages, data.message
+      ]);
     };
 
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log("WebSocket message received:", data);
-      if (data.chatId === chatId) {
-        setMessages((prevMessages) => [...prevMessages, data.message]);
-      }
-    };
-
-    socket.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
-
-    setSocket(socket);
+    registerMessageHandler(handleMessage);
 
     return () => {
-      socket.close();
-      console.log("WebSocket connection closed on component unmount");
+      unregisterMessageHandler(handleMessage);
     };
-  }, [chatId]);
+  }, [registerMessageHandler, unregisterMessageHandler]);
+
+  // Effect for debugging
+  useEffect(() => {
+    console.log("ChatId:", chatId);
+    console.log("Token:", token);
+    console.log("Socket:", socketInstance);
+  }, [chatId, token]);
 
   // Effect to fetch chat data
   useEffect(() => {
@@ -100,18 +95,19 @@ function Chat() {
     const author = decode(token).id;
 
     console.log("author", author);
-
-    socket.send(
-      JSON.stringify({
-        type: "message",
-        chatId: chatId,
-        message: message,
-        userId: author,
-      })
-    );
-    console.log("Message sent:", message);
-
-    event.target.reset();
+    if (socketInstance) {
+      socketInstance.send(
+        JSON.stringify({
+          type: "chatMessage",
+          chatId: chatId,
+          message: message,
+        })
+      );
+      console.log("Message sent:", message);
+      event.target.reset();
+    } else {
+      console.error("Socket is not connected");
+    }
   };
 
   return (

@@ -3,112 +3,139 @@ const logger = require("../utils/logger");
 const Message = require("../models/Message");
 const User = require("../models/User");
 const Chat = require("../models/Chat");
-const { model } = require("mongoose");
+const { model, default: mongoose } = require("mongoose");
+const jwt = require("jsonwebtoken");
+const { path } = require("../app");
+const { parse } = require("url");
+const { log } = require("console");
+const { on } = require("events");
+const e = require("express");
 
-let lastMessage = null;
+// TODO : when user connect to socket he join to all rooms he is in by the db
+// TODO : when user disconnect from socket he leave all rooms he is in by the db
+// TODO : update the last message in the chat document when a new message is sent
 
-// websocket flow:
-// 1. client connect to server
-// 2. client join a chat
-// 3. client send message to server
-// 4. server broadcast message to all clients in the same chat
-// 5. client receive message from server
-// 6. client update message list
-// 7. client scroll to bottom of the message list
 
-exports.setUpWebSocket = (server) => {
-  const wss = new webSocket.Server({ server });
+exports.initializeChatWebSocket = (server) => {
+  const wss = new webSocket.Server({ noServer: true });
 
-  const chatRooms = new Map(); // Map to store chat rooms and their clients
-  wss.on("connection", (ws) => {
+  const onlineUsers = new Map(); // Map to keep track of online users <WebSocket, Set<ChatId>>
+
+  server.on("upgrade", (request, socket, head) => {
+    console.log("Upgrade request URL:", request.url);
+
+    const token = request.url.toString().split("?")[1].split("=")[1];
+
+    console.log("Token from query:", token);
+
+    if (!token) {
+      console.error("Token missing in WebSocket request");
+      socket.destroy();
+      return;
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log("Decoded token:", decoded);
+      request.user = decoded; // Attach user info to request object
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        ws.token = token; // Store the token in the WebSocket object
+        console.log("WebSocket connection established");
+        wss.emit("connection", ws, request); // Emit the connection event to the WebSocket server
+      });
+    } catch (err) {
+      console.error("Token verification failed:", err);
+      socket.destroy();
+      return;
+    }
+  });
+
+  wss.on("connection", async (ws) => {
     logger.logInfoMsg("New client connected");
+    onlineUsers.set(ws, new Set()); // Initialize a new set for the connected client
+
+    // TODO : when user connect to socket he join to all rooms he is in by the db
+    // TODO : when user disconnect from socket he leave all rooms he is in by the db
+
+    const userId = jwt.verify(ws.token, process.env.JWT_SECRET).id;
+    const chatsIds = await User.findById(userId).select("chats");
+
+    console.log("User's chat IDs:", chatsIds.chats);
+    chatsIds.chats.forEach(async (chatId) => {
+      onlineUsers.get(ws).add(chatId); // Add the chatId to the set of online users
+      console.log(`${userId} joined chat: ${chatId}`);  
 
     ws.on("message", async (data) => {
-      const parsedData = JSON.parse(data);
-      const { type, chatId, message, userId } = parsedData;
 
-      if (type === "join") {
-        logger.logInfoMsg(`Client joined chat: ${chatId}`);
-        ws.chatId = chatId;
+      const { type, chatId, message } = JSON.parse(data);
+      logger.logInfoMsg(`Received message: ${data}`);
 
-        if (!chatRooms.has(chatId)) {
-          chatRooms.set(chatId, new Set());
+      if (type === "join") { // TODO : consider using a different event name for joining a chat
+        logger.logInfoMsg(`Client wants to join chat: ${chatId}`);
+        
+        // Add the chatId to the set of online users
+        if (onlineUsers.has(ws)) {
+          onlineUsers.get(ws).add(chatId);
+        } else {
+          onlineUsers.set(ws, new Set([chatId]));
         }
-        chatRooms.get(chatId).add(ws);
-      } else if (type === "message") {
+        logger.logInfoMsg(`Client joined chat: ${chatId}`);
+      }
+      
+      else if (type === "chatMessage") {
         logger.logInfoMsg(`Received message in chat ${chatId}: ${message}`);
 
-        try {
-          logger.logInfoMsg("Saving message to database...");
-          logger.logDebugMsg("author:", userId);
-          // Create and save the new message
-          const newMessage = new Message({
-            author: userId,
-            chat: chatId,
-            content: message,
-          });
-          const savedMessage = await newMessage.save();
-          // Populate the author field with User username
-          const populatedMessage = await Message.findById(
-            savedMessage._id
-          ).populate({
-            path: "author",
-            model: User,
-            select: "username",
-          });
-          logger.logInfoMsg("Message saved:", savedMessage);
+        // Use the token stored in the WebSocket object
+        const authorId = jwt.verify(ws.token, process.env.JWT_SECRET).id;
 
-          // Broadcast the message to other clients in the same chat room
-          if (chatRooms.has(chatId)) {
-            chatRooms.get(chatId).forEach((client) => {
-              if (client !== ws && client.readyState === webSocket.OPEN) {
-                client.send(
-                  JSON.stringify({ chatId, message: populatedMessage })
-                );
-              }
-            });
+        // Create a new message in the database
+        const newMessage = await Message.create({
+          author: authorId,
+          chat: chatId,
+          content: message,
+        });
+
+        const populatedMessage = await newMessage.populate({
+          path: "author",
+          select: "username",
+          model: User,
+        });
+
+        // Broadcast the message to all online users in the app
+        onlineUsers.forEach((chatIdSet, clientSocket) => {
+          if (chatIdSet.has(chatId)) { // Check if the client is in the same chat by checking the set
+            logger.logInfoMsg(`Sending message to ws: ${clientSocket}`);
+            logger.logInfoMsg(`Sending message to chat: ${chatId}`);
+            clientSocket.send(
+              JSON.stringify({
+                type: "chatMessage",
+                chatId: chatId,
+                message: populatedMessage,
+              })
+            );
           }
-          lastMessage = populatedMessage;
-        } catch (err) {
-          logger.logErrorMsg("Error saving message:", err);
-        }
-      }
+        });
+
+        // Update the last message in the chat document
+        await Chat.findByIdAndUpdate({_id: chatId}, {lastMessage: populatedMessage.content}, {new: true});
+
+      } 
+      
+
+      // TODO : handle other message types (e.g., typing, seen, etc.)
     });
 
     ws.on("close", async () => {
       logger.logInfoMsg("Client disconnected");
 
-      // Remove the client from the chat room
-      if (ws.chatId && chatRooms.has(ws.chatId)) {
-        chatRooms.get(ws.chatId).delete(ws);
-
-        // If the chat room is empty, remove it from the map
-        if (chatRooms.get(ws.chatId).size === 0) {
-          chatRooms.delete(ws.chatId);
-        }
-      }
-
-      // Update lastMessage in the Chat model populated with the last message content
-      if (lastMessage) {
-        try {
-          await Chat.findByIdAndUpdate(
-            lastMessage.chat, // Use the chat ID from the last message
-            {
-              lastMessage: lastMessage.content, // Update with the message content
-              lastMessageAt: new Date(), // Optionally update the timestamp
-            },
-            { new: true } // Return the updated document
-          );
-          logger.logInfoMsg("Chat lastMessage updated successfully");
-        } catch (err) {
-          logger.logErrorMsg("Error updating Chat lastMessage:", err);
-        }
-      }
+      
+      
     });
   });
-};
-// TODO:
-// 1. frontend: messages list not auto scrolling - Done
-// 2. backend: populate message author in the broadcasted message
-// 3. backend: update User rooms list after the first message sent
-// 4. backend: update Chat lastMessage and lastMessageAt after message sent
+})};
+
+/**
+ 
+
+
+ */
