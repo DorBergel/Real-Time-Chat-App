@@ -3,7 +3,7 @@ const logger = require("../utils/logger");
 const Message = require("../models/Message");
 const User = require("../models/User");
 const Chat = require("../models/Chat");
-const { model, default: mongoose } = require("mongoose");
+const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const { path } = require("../app");
 const { parse } = require("url");
@@ -63,26 +63,37 @@ exports.initializeChatWebSocket = (server) => {
     console.log("User's chat IDs:", chatsIds.chats);
     chatsIds.chats.forEach(async (chatId) => {
       onlineUsers.get(ws).add(chatId); // Add the chatId to the set of online users
-      console.log(`${userId} joined chat: ${chatId}`);  
+      console.log(`${userId} joined chat: ${chatId}`);
+      ws.send(
+        JSON.stringify({ type: "message", chatId: chatId, message: `now you supposed to receive messages for ${chatId}` })
+      );
+
+      // log online users and their chat IDs in organized way
+      console.log("Online users and their chat IDs:");
+      onlineUsers.forEach((chatIdSet, clientSocket) => {
+        const clientUserId = jwt.verify(clientSocket.token, process.env.JWT_SECRET).id;
+        const chatIds = Array.from(chatIdSet);
+        console.log(`User ID: ${clientUserId}, Chat IDs: ${chatIds}`);
+      });
+      
+      
+
 
     ws.on("message", async (data) => {
 
       const { type, chatId, message } = JSON.parse(data);
+      const chatIdObject = mongoose.Types.ObjectId.isValid(chatId)
+        ? mongoose.Types.ObjectId.createFromHexString(chatId)
+        : null;
+
+      if (!chatIdObject) {
+        logger.logErrorMsg(`Invalid chatId: ${chatId}`);
+        return;
+      }
+
       logger.logInfoMsg(`Received message: ${data}`);
 
-      if (type === "join") { // TODO : consider using a different event name for joining a chat
-        logger.logInfoMsg(`Client wants to join chat: ${chatId}`);
-        
-        // Add the chatId to the set of online users
-        if (onlineUsers.has(ws)) {
-          onlineUsers.get(ws).add(chatId);
-        } else {
-          onlineUsers.set(ws, new Set([chatId]));
-        }
-        logger.logInfoMsg(`Client joined chat: ${chatId}`);
-      }
-      
-      else if (type === "chatMessage") {
+      if (type === "chatMessage") {
         logger.logInfoMsg(`Received message in chat ${chatId}: ${message}`);
 
         // Use the token stored in the WebSocket object
@@ -103,9 +114,12 @@ exports.initializeChatWebSocket = (server) => {
 
         // Broadcast the message to all online users in the app
         onlineUsers.forEach((chatIdSet, clientSocket) => {
-          if (chatIdSet.has(chatId)) { // Check if the client is in the same chat by checking the set
-            logger.logInfoMsg(`Sending message to ws: ${clientSocket}`);
-            logger.logInfoMsg(`Sending message to chat: ${chatId}`);
+          // Check if the client is in the same chat by checking the set
+          console.log("Client's chat IDs:", chatIdSet);
+          console.log("Client's token:", clientSocket.token);
+          console.log("Chat ID:", chatIdObject);
+          console.log("chatIdsSet.has(chatId)", chatIdSet.has(chatIdObject));
+          if(Array.from(chatIdSet).some((id) => id.equals(chatIdObject))) {
             clientSocket.send(
               JSON.stringify({
                 type: "chatMessage",
@@ -114,6 +128,8 @@ exports.initializeChatWebSocket = (server) => {
               })
             );
           }
+
+          
         });
 
         // Update the last message in the chat document
