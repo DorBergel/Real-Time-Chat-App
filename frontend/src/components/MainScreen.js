@@ -55,13 +55,7 @@ function MainScreen() {
 
   const handleChatItemClick = (chatId) => {
     console.log("Chat item clicked:", chatId);
-    socketInstance.send(
-      JSON.stringify({
-        type: "join",
-        chatId: chatId,
-        message: chatId,
-      })
-    );
+    
     navigate(`/chat/${chatId}`);
   };
 
