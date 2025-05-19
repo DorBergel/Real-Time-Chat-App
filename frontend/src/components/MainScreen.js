@@ -10,8 +10,41 @@ function MainScreen() {
   const [listState, setListState] = useState("Contacts");
   const [contactsList, setContactsList] = useState([]);
   const [chatsList, setChatsList] = useState([]);
-  const { socketInstance, registerMessageHandler, unregisterMessageHandler } = useWebSocket();
+  const [username, setUsername] = useState("");
+  const { socketInstance, registerMessageHandler, unregisterMessageHandler } =
+    useWebSocket();
+  const token = localStorage.getItem("token");
+  const decodedToken = decode(token);
+  const navigate = useNavigate();
 
+  // Effect for setting the username
+  useEffect(() => {
+    if (decodedToken) {
+      fetch(
+        `${process.env.REACT_APP_API_URL}/api/user/username/${decodedToken.id}`,
+        {
+          method: "GET",
+          headers: {
+            "content-type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      ).then((response) => {
+        if (response.ok) {
+          response.json().then((data) => {
+            console.log("Username data:", data);
+            setUsername(data.username);
+          });
+        } else {
+          console.error("Failed to fetch username");
+        }
+      });
+    } else {
+      console.error("No decoded token found");
+    }
+  }, [decodedToken, token]);
+
+  // Effect for handling incoming messages
   useEffect(() => {
     const handleMessage = (data) => {
       console.log("Received message:", data);
@@ -32,10 +65,6 @@ function MainScreen() {
     };
   }, [registerMessageHandler, unregisterMessageHandler]);
 
-  const token = localStorage.getItem("token");
-  const decodedToken = decode(token);
-  const navigate = useNavigate();
-
   const handleContactsButtonClick = () => {
     console.log("Contacts list button clicked");
     setListState("Contacts");
@@ -55,7 +84,7 @@ function MainScreen() {
 
   const handleChatItemClick = (chatId) => {
     console.log("Chat item clicked:", chatId);
-    
+
     navigate(`/chat/${chatId}`);
   };
 
@@ -117,11 +146,10 @@ function MainScreen() {
     });
   }, []);
 
-
   return (
     <div className="MainScreen">
       <div className="Main-header" style={{ textAlign: "center" }}>
-        <h1>Main Screen</h1>
+        <h1>Hi {username}</h1>
         <p>Here you can create a new chat or enter to previous ones</p>
       </div>
 
@@ -150,7 +178,7 @@ function MainScreen() {
           </Button>
         </div>
       </div>
-
+      {/* Add a button to create a new chat or add a contact */}
       <div className="List">
         {listState === "Contacts" ? (
           <div className="list">
@@ -173,6 +201,7 @@ function MainScreen() {
               <div
                 key={chat._id}
                 className="item"
+                M
                 onClick={() => handleChatItemClick(chat._id)}
               >
                 <h3>{chat.title}</h3>
