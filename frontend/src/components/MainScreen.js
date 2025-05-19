@@ -201,7 +201,6 @@ function MainScreen() {
               <div
                 key={chat._id}
                 className="item"
-                M
                 onClick={() => handleChatItemClick(chat._id)}
               >
                 <h3>{chat.title}</h3>

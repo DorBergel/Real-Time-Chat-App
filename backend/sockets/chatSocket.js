@@ -15,7 +15,6 @@ const e = require("express");
 // TODO : when user disconnect from socket he leave all rooms he is in by the db
 // TODO : update the last message in the chat document when a new message is sent
 
-
 exports.initializeChatWebSocket = (server) => {
   const wss = new webSocket.Server({ noServer: true });
 
@@ -65,90 +64,91 @@ exports.initializeChatWebSocket = (server) => {
       onlineUsers.get(ws).add(chatId); // Add the chatId to the set of online users
       console.log(`${userId} joined chat: ${chatId}`);
       ws.send(
-        JSON.stringify({ type: "message", chatId: chatId, message: `now you supposed to receive messages for ${chatId}` })
+        JSON.stringify({
+          type: "message",
+          chatId: chatId,
+          message: `now you supposed to receive messages for ${chatId}`,
+        })
       );
 
       // log online users and their chat IDs in organized way
       console.log("Online users and their chat IDs:");
       onlineUsers.forEach((chatIdSet, clientSocket) => {
-        const clientUserId = jwt.verify(clientSocket.token, process.env.JWT_SECRET).id;
+        const clientUserId = jwt.verify(
+          clientSocket.token,
+          process.env.JWT_SECRET
+        ).id;
         const chatIds = Array.from(chatIdSet);
         console.log(`User ID: ${clientUserId}, Chat IDs: ${chatIds}`);
       });
-      
-      
 
+      ws.on("message", async (data) => {
+        const { type, chatId, message } = JSON.parse(data);
+        const chatIdObject = mongoose.Types.ObjectId.isValid(chatId)
+          ? mongoose.Types.ObjectId.createFromHexString(chatId)
+          : null;
 
-    ws.on("message", async (data) => {
+        if (!chatIdObject) {
+          logger.logErrorMsg(`Invalid chatId: ${chatId}`);
+          return;
+        }
 
-      const { type, chatId, message } = JSON.parse(data);
-      const chatIdObject = mongoose.Types.ObjectId.isValid(chatId)
-        ? mongoose.Types.ObjectId.createFromHexString(chatId)
-        : null;
+        logger.logInfoMsg(`Received message: ${data}`);
 
-      if (!chatIdObject) {
-        logger.logErrorMsg(`Invalid chatId: ${chatId}`);
-        return;
-      }
+        if (type === "chatMessage") {
+          logger.logInfoMsg(`Received message in chat ${chatId}: ${message}`);
 
-      logger.logInfoMsg(`Received message: ${data}`);
+          // Use the token stored in the WebSocket object
+          const authorId = jwt.verify(ws.token, process.env.JWT_SECRET).id;
 
-      if (type === "chatMessage") {
-        logger.logInfoMsg(`Received message in chat ${chatId}: ${message}`);
+          // Create a new message in the database
+          const newMessage = await Message.create({
+            author: authorId,
+            chat: chatId,
+            content: message,
+          });
 
-        // Use the token stored in the WebSocket object
-        const authorId = jwt.verify(ws.token, process.env.JWT_SECRET).id;
+          const populatedMessage = await newMessage.populate({
+            path: "author",
+            select: "username",
+            model: User,
+          });
 
-        // Create a new message in the database
-        const newMessage = await Message.create({
-          author: authorId,
-          chat: chatId,
-          content: message,
-        });
+          // Broadcast the message to all online users in the app
+          onlineUsers.forEach((chatIdSet, clientSocket) => {
+            // Check if the client is in the same chat by checking the set
+            console.log("Client's chat IDs:", chatIdSet);
+            console.log("Client's token:", clientSocket.token);
+            console.log("Chat ID:", chatIdObject);
+            console.log("chatIdsSet.has(chatId)", chatIdSet.has(chatIdObject));
+            if (Array.from(chatIdSet).some((id) => id.equals(chatIdObject))) {
+              clientSocket.send(
+                JSON.stringify({
+                  type: "chatMessage",
+                  chatId: chatId,
+                  message: populatedMessage,
+                })
+              );
+            }
+          });
 
-        const populatedMessage = await newMessage.populate({
-          path: "author",
-          select: "username",
-          model: User,
-        });
+          // Update the last message in the chat document
+          await Chat.findByIdAndUpdate(
+            { _id: chatId },
+            { lastMessage: populatedMessage.content },
+            { new: true }
+          );
+        }
 
-        // Broadcast the message to all online users in the app
-        onlineUsers.forEach((chatIdSet, clientSocket) => {
-          // Check if the client is in the same chat by checking the set
-          console.log("Client's chat IDs:", chatIdSet);
-          console.log("Client's token:", clientSocket.token);
-          console.log("Chat ID:", chatIdObject);
-          console.log("chatIdsSet.has(chatId)", chatIdSet.has(chatIdObject));
-          if(Array.from(chatIdSet).some((id) => id.equals(chatIdObject))) {
-            clientSocket.send(
-              JSON.stringify({
-                type: "chatMessage",
-                chatId: chatId,
-                message: populatedMessage,
-              })
-            );
-          }
+        // TODO : handle other message types (e.g., typing, seen, etc.)
+      });
 
-          
-        });
-
-        // Update the last message in the chat document
-        await Chat.findByIdAndUpdate({_id: chatId}, {lastMessage: populatedMessage.content}, {new: true});
-
-      } 
-      
-
-      // TODO : handle other message types (e.g., typing, seen, etc.)
-    });
-
-    ws.on("close", async () => {
-      logger.logInfoMsg("Client disconnected");
-
-      
-      
+      ws.on("close", async () => {
+        logger.logInfoMsg("Client disconnected");
+      });
     });
   });
-})};
+};
 
 /**
  
