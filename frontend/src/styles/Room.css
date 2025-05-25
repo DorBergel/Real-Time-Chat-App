@@ -1,0 +1,55 @@
+.room {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f0f0f0;
+  height: 100%;
+}
+
+.room_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+}
+
+.room_messages {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: #ffffff;
+    border-radius: 5px;
+    height: 70%;
+    overflow-y: auto; /* Allow scrolling if messages overflow */
+}
+
+.message {
+    padding: 0.5rem;
+    border-radius: 5px;
+    background-color: #e0e0e0;
+    max-width: 80%; /* Limit the width of messages */
+
+}
+
+.sent {
+    align-self: flex-end; /* Align sent messages to the right */
+    background-color: #d1ffd1; /* Light green for sent messages */
+}
+
+.received {
+    align-self: flex-start; /* Align received messages to the left */
+    background-color: #ffd1d1; /* Light red for received messages */
+}
+
+.room_input {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: #ffffff;
+    border-radius: 5px;
+
+}
