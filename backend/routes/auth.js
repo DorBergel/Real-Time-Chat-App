@@ -31,4 +31,15 @@ router.post("/register", authController.register);
  */
 router.post("/login", authController.login);
 
+/**
+ * @desc    Refresh the access token
+ * @route   POST /api/auth/refresh-token
+ * @access  Public
+ * @param   {string} refreshToken - The refresh token of the user
+ * @returns {object} - The new access token
+ * @throws  {Error} - If the refresh token is invalid or expired
+ * @throws  {Error} - If the required data is not provided
+ */
+router.post("/refresh-token", authController.refreshToken);
+
 module.exports = router;

@@ -1,8 +1,8 @@
 # Current APIs Implemented in Backend Project
 
 1. **User Authentication**
-    - `POST /api/auth/register` - Register a new user
-    - `POST /api/auth/login` - Log in an existing user
+    - `POST /api/auth/register` - Register a new user, required: `username`, `email`, `password`
+    - `POST /api/auth/login` - Log in an existing user, required: `email`, `password`
 
 2. **User**
     - `GET /api/user/contacts/:userId` - Get user contacts

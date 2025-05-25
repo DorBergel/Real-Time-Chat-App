@@ -2,8 +2,46 @@ const userValidation = require("../utils/userValidation");
 const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
+const { logDebugMsg } = require("../utils/logger");
 require("dotenv").config({ path: "../config/.env" });
 
+
+
+exports.generateTokens = async (userId) => {
+  const accessToken = await jwt.sign({ id: userId }, process.env.JWT_SECRET, {expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRES_IN});
+  const refreshToken = await jwt.sign({ id: userId }, process.env.JWT_SECRET, {expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRES_IN});
+
+  logDebugMsg(
+    `access token: ${accessToken}, refresh token: ${refreshToken}`
+  );
+
+  return { accessToken, refreshToken };
+}
+
+exports.verifyRefreshToken = async (refreshToken) => {
+  try {
+    const decoded = await jwt.verify(refreshToken, process.env.JWT_SECRET);
+    return decoded;
+  } catch (err) {
+    throw new Error("Invalid refresh token");
+  }
+}
+
+
+/**
+* @desc    Register a new user
+* @route   POST /api/auth/register
+* @access  Public
+* @param   {string} u_username - The username of the user
+* @param   {string} u_firstname - The first name of the user
+* @param   {string} u_lastname - The last name of the user
+* @param   {string} u_email - The email of the user
+* @param   {string} u_password - The password of the user
+* @param   {string} u_birthday - The birthday of the user
+* @returns {object} - The newly created user object
+* @throws  {Error} - If the required data is not provided or if there is an error during registration
+* @throws  {Error} - If the user already exists
+*/
 exports.registerUser = async ({
   u_username,
   u_firstname,
@@ -51,6 +89,16 @@ exports.registerUser = async ({
   return newUserDocument;
 };
 
+/** 
+* @desc    Log in an existing user
+* @route   POST /api/auth/login
+* @access  Public
+* @param   {string} u_username - The username of the user
+* @param   {string} u_password - The password of the user
+* @returns {object} - The authenticated user object along with a token
+* @throws  {Error} - If the email or password is incorrect
+* @throws  {Error} - If the required data is not provided
+*/
 exports.loginUser = async ({ u_username, u_password }) => {
   const user = await User.findOne({ username: u_username });
 
@@ -65,10 +113,14 @@ exports.loginUser = async ({ u_username, u_password }) => {
     throw new Error(`password is incorrect`);
   }
 
-  // Generate the current user's token
-  const token = await jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
+  // Generate the current user's tokens
+  const { accessToken, refreshToken } = await this.generateTokens(user._id);
+  
 
-  return { user: user, token: token };
+  logDebugMsg(
+    `user ${user.username} logged in successfully, access token: ${accessToken}, refresh token: ${refreshToken}`
+  );
+
+  return { user: user, accessToken: accessToken, refreshToken: refreshToken };
 };
+
