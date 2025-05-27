@@ -10,7 +10,7 @@ function AppManager() {
   const [username, setUsername] = useState(""); // State to hold user data
   const [userChats, setUserChats] = useState([]); // State to hold user chats
   const [currentChat, setCurrentChat] = useState(null); // State to hold current chat
-  const { registerListener, unregisterListener } = useWebSocket(); // Access WebSocket context
+  const { socket, registerListener, unregisterListener } = useWebSocket(); // Access WebSocket context
 
   // Effect to fetch username from backend
   useEffect(() => {
@@ -60,7 +60,21 @@ function AppManager() {
               : chat
           )
         );
-      }
+      } 
+      // Handle incoming messageSeen event
+      /*else if (message.type === 'messageSeen') {
+        // Update all messages in the current chat to mark them as seen
+        if (currentChat && currentChat._id === message.chatId) {
+          console.log('Message seen event received for chat:', message.chatId);
+          setCurrentChat((prevChat) => ({
+            ...prevChat,
+            lastMessage: {
+              ...prevChat.lastMessage,
+              seen: true, // Assuming lastMessage has a seen property
+            },
+          }));
+        }
+      }*/
     };
 
     registerListener(handleWebSocketMessage);
@@ -69,6 +83,24 @@ function AppManager() {
       unregisterListener(handleWebSocketMessage);
     };
   }, [registerListener, unregisterListener]);
+
+  // Effect to handle current chat changes
+  useEffect(() => {
+    if (currentChat) {
+      console.log('Current chat changed:', currentChat);
+
+      // if last message is sent by the other user, mark it as seen
+      if (currentChat.lastMessage && currentChat.lastMessage.sender !== userId && socket) {
+        console.log('Send messageSeen event for all messages in the current chat');
+        const messageSeenEvent = {
+          type: 'messageSeen',
+          chatId: currentChat._id,
+          message: userId,
+        };
+        socket.send(JSON.stringify(messageSeenEvent));
+      }
+    }
+  }, [currentChat]);
 
   return (
     <div className="AppManager">

@@ -64,16 +64,9 @@ exports.initializeChatWebSocket = (server) => {
 
   // Handle HTTP upgrade requests to WebSocket
   server.on("upgrade", (request, socket, head) => {
-    console.log("SOCKET Upgrade request URL:", request.url);
-
     const url = request.url;
-    if (!url || !url.includes("?") || !url.includes("=")) {
-      console.error("SOCKET Invalid or missing URL in the request:", url);
-      socket.destroy();
-      return;
-    }
+    const token = url?.split("?")[1]?.split("=")[1];
 
-    const token = url.split("?")[1].split("=")[1];
     if (!token) {
       console.error("SOCKET Token not found in the URL:", url);
       socket.destroy();
@@ -82,15 +75,18 @@ exports.initializeChatWebSocket = (server) => {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("SOCKET Decoded token:", decoded);
-      request.user = decoded; // Attach user info to request object
+      request.user = decoded;
       wss.handleUpgrade(request, socket, head, (ws) => {
-        ws.token = token; // Store the token in the WebSocket object
-        console.log("SOCKET WebSocket connection established");
-        wss.emit("connection", ws, request); // Emit the connection event to the WebSocket server
+        ws.token = token;
+        wss.emit("connection", ws, request);
       });
     } catch (err) {
-      console.error("SOCKET Token verification failed:", err);
+      if (err.name === "TokenExpiredError") {
+        console.error("SOCKET Token expired:", err);
+        socket.write("HTTP/1.1 440 Login Timeout\r\n\r\nToken expired");
+      } else {
+        console.error("SOCKET Token verification failed:", err);
+      }
       socket.destroy();
     }
   });
@@ -180,9 +176,38 @@ exports.initializeChatWebSocket = (server) => {
               { new: true }
             );
           }
-          else if (type === "messageSeen") {}
-          
-        } catch (err) {
+          else if (type === "messageSeen") {
+            logger.logInfoMsg(`SOCKET Message seen event received in chat ${chatId} by ${message}`);
+
+            // if event sent from the author of the message - do not update the messages as seen
+            // find all unseen messages in the chat
+            const unseenMessages = await Message.find({
+              chat: chatId,
+              seen: false});
+            if (unseenMessages.length === 0) {
+              logger.logInfoMsg(`SOCKET No unseen messages in chat ${chatId}`);
+              return;
+            }
+
+            // update all unseen messages which are not sent by the event sender
+            await Message.updateMany({chat: chatId, seen: false, author: { $ne: message }}, { seen: true });
+            logger.logInfoMsg(`SOCKET Updated messages as seen in chat ${chatId} sent from ${message}`);
+
+            // Broadcast the seen message to all connected clients in the same chat room
+            onlineUsers.forEach((chatIdSet, clientSocket) => {
+              if (chatIdSet.has(chatId)) {
+                clientSocket.send(
+                  JSON.stringify({
+                    type: "messageSeen",
+                    chatId: chatId,
+                    message: `All messages in this chat are now seen. (event sent by ${message})`,
+                  })
+                );
+              }});
+            
+            }
+            
+          } catch (err) {
           console.error("SOCKET Error processing message:", err);
         }
       });
@@ -204,4 +229,32 @@ exports.initializeChatWebSocket = (server) => {
  * - `close`: Emitted when a client disconnects from the WebSocket server.
  * - `error`: Emitted when an error occurs in the WebSocket server.
  * - `upgrade`: Emitted when an HTTP request is upgraded to a WebSocket connection.
+ */
+
+/**
+ // if event sent from the author of the message - do not update the messages as seen
+            const authorId = jwt.verify(ws.token, process.env.JWT_SECRET).id;
+            
+            // message val type should be the message id
+            logger.logInfoMsg(`SOCKET Message seen in chat ${chatId}: ${message}`);
+
+            if( authorId === message) {
+              logger.logInfoMsg(`SOCKET Author of the message is the same as the sender of the seen event - not updating messages as seen`);
+              return;
+            } else {
+                await Message.updateMany({chat: chatId, seen: false}, { seen: true }, { new: true });
+
+                logger.logInfoMsg(`SOCKET Updated messages as seen sent from ${message}`);
+                // Broadcast the seen message to all connected clients in the same chat room
+                onlineUsers.forEach((chatIdSet, clientSocket) => {
+                  if (chatIdSet.has(chatId)) {
+                    clientSocket.send(
+                      JSON.stringify({
+                        type: "messageSeen",
+                        chatId: chatId,
+                        message: `all messages in this chat are now seen.(event sent ${populatedMessages.author.username})`,
+                      })
+                    );
+                  }
+                });
  */
