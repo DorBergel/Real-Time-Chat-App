@@ -98,7 +98,7 @@ export const WebSocketProvider = ({ children }) => {
             globalSocket.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    console.log("Message on ID:", globalSocket.id, data);
+                    console.log("(Received) Message on ID:", globalSocket.id, data);
 
                     // Handle messages based on the user location in the app
                     listenersRef.current.forEach((listener) => listener(data));

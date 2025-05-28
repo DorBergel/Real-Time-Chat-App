@@ -16,7 +16,32 @@ const Room = ({ currentChat }) => {
             if (message.type === 'chatMessage' && message.chatId === currentChat._id) {
                 // Update messages state with the new message
                 setMessages((prevMessages) => [...prevMessages, message.message]);
-            }         
+
+                // send a message seen event back to the server
+                if (socket && currentChat && currentChat._id === message.chatId && message.message.author._id !== userId) {
+                    console.log('Sending message seen event for chat:', currentChat._id);
+                    const seenMessage = {
+                        type: 'messageSeen',
+                        chatId: currentChat._id,
+                        message: userId
+                    };
+                    socket.send(JSON.stringify(seenMessage)); // Send the seen event
+                }
+            } 
+            else if (message.type === 'messageSeen') {
+                // Update all messages in the current chat to mark them as seen
+                if (currentChat && currentChat._id === message.chatId) {
+                  console.log('Message seen event received for chat:', message.chatId);
+                  
+                  // Update all messages in the current chat to mark them as seen
+                  
+                  setMessages((prevMessages) =>
+                    prevMessages.map((msg) =>
+                        !msg.seen ? { ...msg, seen: true } : msg // Only update if not already seen
+                    )
+                );
+                }
+              }
         };
 
         registerListener(handleWebSocketMessage);
@@ -87,6 +112,10 @@ const Room = ({ currentChat }) => {
                         <p>
                             <strong>{message.author.username}</strong>: {message.content}
                         </p>
+                        {(message.author._id === userId) ?
+                        <span className='seen-status'>
+                            {message.seen ? 'Seen' : 'Not Seen'}
+                        </span> : null}
                     </div>
                 ))}
             </div>

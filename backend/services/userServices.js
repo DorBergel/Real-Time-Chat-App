@@ -17,8 +17,8 @@ exports.getUserContacts = async (userId) => {
 };
 
 exports.getUserChats = async (userId) => {
-  // Find the user by ID and populate the chats field
-  const user = await User.findById(userId).populate("chats");
+  // Find the user by ID and populate the chats and lastMessage fields
+  const user = await User.findById(userId).populate({path: "chats", populate: {path: "lastMessage", model: "Message"}});
   if (!user) {
     throw new Error("User not found");
   } 
