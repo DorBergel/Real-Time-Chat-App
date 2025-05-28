@@ -10,6 +10,21 @@ const Sidebar = ({ username, chats = [], currentChat, setCurrentChat }) => {
     useEffect(() => {
         const handleWebSocketMessage = (message) => {
             console.log('Sidebar - WebSocket message received:', message);
+
+            if (message.type === 'messageSeen') {
+                // update the relevant chat in the sidebar
+                console.log('Message seen event received for chat:', message.chatId);
+                setCurrentChat((prevChat) => {
+                    if (prevChat && prevChat._id === message.chatId) {
+                        // Update the last message to mark it as seen
+                        return {
+                            ...prevChat,
+                            lastMessage: message.message
+                        };
+                    }
+                    return prevChat; // No change if current chat doesn't match
+                });
+            }
         };
 
         registerListener(handleWebSocketMessage);
@@ -54,7 +69,16 @@ const Sidebar = ({ username, chats = [], currentChat, setCurrentChat }) => {
                     chats.map((chat, index) => (
                         <div key={index} className="chat_item" onClick={() => handleItemClick(chat)}>
                             <h3>{chat.title}</h3>
-                            <p>{chat.lastMessage}</p>
+                            <p>{chat.lastMessage?.content}</p>
+                            <hr />
+                            <div className='chat_item_status'>
+                                <span className='chat_item_status_seen'>
+                                    {chat.lastMessage?.seen ? 'Seen' : 'Not Seen'}
+                                </span>
+                                <span className='chat_item_status_time'>
+                                    {new Date(chat.lastMessage?.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                </span>
+                            </div>
                         </div>
                     ))
                 ) : (

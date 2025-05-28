@@ -37,6 +37,13 @@ exports.getUserChats = async (req, res) => {
         logger.logErrorMsg(`required data not provided`);
         return res.status(400).json({ reason: "required data not provided" });
     }
+
+    // Validate userId format
+    const mongoose = require("mongoose");
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        logger.logErrorMsg(`Invalid userId format`);
+        return res.status(400).json({ reason: "Invalid userId format" });
+    }
     
     try {
         const chats = await userServices.getUserChats(userId);

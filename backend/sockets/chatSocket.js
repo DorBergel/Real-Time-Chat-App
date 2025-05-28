@@ -172,7 +172,7 @@ exports.initializeChatWebSocket = (server) => {
 
             await Chat.findByIdAndUpdate(
               { _id: chatId },
-              { lastMessage: populatedMessage.content },
+              { lastMessage: newMessage._id },
               { new: true }
             );
           }
@@ -193,6 +193,11 @@ exports.initializeChatWebSocket = (server) => {
             await Message.updateMany({chat: chatId, seen: false, author: { $ne: message }}, { seen: true });
             logger.logInfoMsg(`SOCKET Updated messages as seen in chat ${chatId} sent from ${message}`);
 
+            // use lastMessage to send the last message seen event
+            const lastMessage = await Message.findOne({ chat: chatId, seen: true })
+              .sort({ createdAt: -1 })
+              .populate({ path: "author", select: "username", model: User });
+
             // Broadcast the seen message to all connected clients in the same chat room
             onlineUsers.forEach((chatIdSet, clientSocket) => {
               if (chatIdSet.has(chatId)) {
@@ -200,7 +205,7 @@ exports.initializeChatWebSocket = (server) => {
                   JSON.stringify({
                     type: "messageSeen",
                     chatId: chatId,
-                    message: `All messages in this chat are now seen. (event sent by ${message})`,
+                    message: lastMessage
                   })
                 );
               }});

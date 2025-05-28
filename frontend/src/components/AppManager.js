@@ -5,6 +5,9 @@ import Room from './Room';
 import { fetchData } from '../fetcher';
 import { useWebSocket } from '../WebSocketContext';
 
+// TODO: need that lastMessage field in chat document be populated with the last message in the chat
+
+
 function AppManager() {
   const userId = localStorage.getItem('user-id'); // Get user ID from local storage
   const [username, setUsername] = useState(""); // State to hold user data
@@ -52,29 +55,37 @@ function AppManager() {
   // WebSocket listener to update chats dynamically
   useEffect(() => {
     const handleWebSocketMessage = (message) => {
+      console.log('AppManager: WebSocket message received:', message);
+
       if (message.type === 'chatMessage') {
         setUserChats((prevChats) =>
           prevChats.map((chat) =>
             chat._id === message.chatId
-              ? { ...chat, lastMessage: message.message.content }
+              ? { ...chat, lastMessage: message.message }
               : chat
           )
         );
-      } 
-      // Handle incoming messageSeen event
-      /*else if (message.type === 'messageSeen') {
-        // Update all messages in the current chat to mark them as seen
-        if (currentChat && currentChat._id === message.chatId) {
-          console.log('Message seen event received for chat:', message.chatId);
-          setCurrentChat((prevChat) => ({
-            ...prevChat,
-            lastMessage: {
-              ...prevChat.lastMessage,
-              seen: true, // Assuming lastMessage has a seen property
-            },
-          }));
-        }
-      }*/
+      } else if (message.type === 'messageSeen') {
+        console.log('Message seen event received for chat:', message.chatId);
+
+        // Update the userChats state to mark the last message as seen
+        setUserChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat._id === message.chatId
+              ? {
+                  ...chat,
+                  lastMessage: {
+                    ...chat.lastMessage,
+                    seen: true, // Update the seen status
+                  },
+                }
+              : chat
+          )
+        );
+
+        // Debugging log to verify state update
+        console.log('AppManager: Updated userChats after messageSeen event:', userChats);
+      }
     };
 
     registerListener(handleWebSocketMessage);
@@ -82,7 +93,7 @@ function AppManager() {
     return () => {
       unregisterListener(handleWebSocketMessage);
     };
-  }, [registerListener, unregisterListener]);
+  }, [registerListener, unregisterListener, userChats]);
 
   // Effect to handle current chat changes
   useEffect(() => {
