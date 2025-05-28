@@ -35,3 +35,19 @@
     border: 1px solid black;
     padding: 5px;
 }
+
+.chat_item_status {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.unseen_item {
+    background-color: #f8d7da; /* Light red background for unseen messages */
+    border-left: 5px solid #dc3545; /* Red border */
+}
+
+.seen_item {
+    background-color: #d4edda; /* Light green background for seen messages */
+    border-left: 5px solid #28a745; /* Green border */
+}

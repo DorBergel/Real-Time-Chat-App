@@ -47,6 +47,13 @@ const Sidebar = ({ username, chats = [], currentChat, setCurrentChat }) => {
         console.log('Sidebar - useEffect - Chats:', chats);
     }, [username, chats]);
 
+    // sort chats by last message time
+    const sortedChats = [...chats].sort((a, b) => {
+        const aTime = new Date(a.lastMessage?.createdAt || 0);
+        const bTime = new Date(b.lastMessage?.createdAt || 0);
+        return bTime - aTime; // Sort in descending order
+    });
+
     return (
         <div className="sidebar">
             <div className="sidebar_header">
@@ -66,17 +73,17 @@ const Sidebar = ({ username, chats = [], currentChat, setCurrentChat }) => {
             </div>
             <div className="chat_list">
                 {chats.length > 0 ? (
-                    chats.map((chat, index) => (
-                        <div key={index} className="chat_item" onClick={() => handleItemClick(chat)}>
+                    sortedChats.map((chat, index) => (
+                        <div key={index} className={`chat_item ${chat.lastMessage?.seen ? `seen_item` : 'unseen_item'}`} onClick={() => handleItemClick(chat)}>
                             <h3>{chat.title}</h3>
                             <p>{chat.lastMessage?.content}</p>
                             <hr />
                             <div className='chat_item_status'>
-                                <span className='chat_item_status_seen'>
-                                    {chat.lastMessage?.seen ? 'Seen' : 'Not Seen'}
-                                </span>
                                 <span className='chat_item_status_time'>
                                     {new Date(chat.lastMessage?.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                </span>
+                                <span className='chat_item_status_seen'>
+                                    {chat.lastMessage?.seen ? 'Seen' : 'Not Seen'}
                                 </span>
                             </div>
                         </div>
