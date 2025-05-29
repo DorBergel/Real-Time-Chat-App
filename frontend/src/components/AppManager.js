@@ -12,6 +12,7 @@ function AppManager() {
   const userId = localStorage.getItem('user-id'); // Get user ID from local storage
   const [username, setUsername] = useState(""); // State to hold user data
   const [userChats, setUserChats] = useState([]); // State to hold user chats
+  const [userContacts, setUserContacts] = useState([]); // State to hold user contacts
   const [currentChat, setCurrentChat] = useState(null); // State to hold current chat
   const { socket, registerListener, unregisterListener } = useWebSocket(); // Access WebSocket context
 
@@ -30,6 +31,25 @@ function AppManager() {
       })
       .catch(error => {
         console.error('There was a problem with the fetch operation:', error);
+      });
+  }, [userId]);
+
+  // Effect to fetch user contacts from backend
+  useEffect(() => {
+    fetchData(`${process.env.REACT_APP_API_URL}/api/user/contacts/${userId}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('AppManager - useEffect - User contacts fetched successfully:', data);
+        // Assuming data.contacts is an array of contact objects
+        setUserContacts(data.contacts);
+      }).catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+        setUserContacts([]);
       });
   }, [userId]);
 
@@ -116,7 +136,7 @@ function AppManager() {
   return (
     <div className="AppManager">
       <div className='toolbar_container'>
-        <Sidebar username={username} chats={userChats} currentChat={currentChat} setCurrentChat={setCurrentChat} />
+        <Sidebar username={username} chats={userChats} contacts={userContacts} currentChat={currentChat} setCurrentChat={setCurrentChat} />
       </div>
       <div className='chat_container'>
         {currentChat ? (

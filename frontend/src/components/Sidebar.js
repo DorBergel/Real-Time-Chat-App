@@ -1,10 +1,38 @@
 import React from 'react';
 import '../styles/Sidebar.css';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useWebSocket } from '../WebSocketContext'; // Use the hook, not the provider
+import ButtonGroup from 'react-bootstrap/ButtonGroup';
+import ToggleButton from 'react-bootstrap/ToggleButton';
 
-const Sidebar = ({ username, chats = [], currentChat, setCurrentChat }) => {
+const Sidebar = ({ username, chats = [], contacts = [], currentChat, setCurrentChat }) => {
     const { socket, registerListener, unregisterListener } = useWebSocket(); // Use the hook to access the context
+    const userId = localStorage.getItem('user-id'); // Get user ID from local storage
+    const [listState, setListState] = useState("Chats"); 
+
+    const handleChatItemClick = (chatId) => {
+        console.log('Sidebar - handleChatItemClick - Chat ID:', chatId);
+        // Find the chat with the given ID
+        const selectedChat = chats.find(chat => chat._id === chatId);
+        if (selectedChat) {
+            console.log('Sidebar - handleChatItemClick - Selected Chat:', selectedChat);
+            setCurrentChat(selectedChat); // Set the current chat to the selected chat
+        } else {
+            console.error('Sidebar - handleChatItemClick - Chat not found:', chatId);
+            setCurrentChat(null); // Clear current chat if not found
+        }
+    };
+
+    const handleContactItemClick = (contactId) => {
+        console.log('Sidebar - handleContactItemClick - Contact ID:', contactId);
+        // Find the contact with the given ID
+        const selectedContact = contacts.find(contact => contact._id === contactId);
+        if (selectedContact) {
+            console.log('Sidebar - handleContactItemClick - Selected Contact:', selectedContact);
+        } else {
+            console.error('Sidebar - handleContactItemClick - Contact not found:', contactId);
+        }
+    };
 
     // Register a listener for WebSocket messages
     useEffect(() => {
@@ -35,12 +63,6 @@ const Sidebar = ({ username, chats = [], currentChat, setCurrentChat }) => {
         };
     }, [registerListener, unregisterListener]);
 
-    const handleItemClick = (chatId) => {
-        // Handle chat item click
-        console.log(`Chat item clicked: ${chatId}`);
-        setCurrentChat(chatId);
-    };
-
     // Debug effect to log user data
     useEffect(() => {
         console.log('Sidebar - useEffect - Username:', username);
@@ -62,36 +84,86 @@ const Sidebar = ({ username, chats = [], currentChat, setCurrentChat }) => {
                     <h2>{username ? username : "ERROR"}</h2>
                 </div>
                 <div className="sidebar_buttons">
-                    <button id="settings_btn">Settings</button>
-                    <button id="logout_btn">Logout</button>
-                    <button id="new_chat_btn">New Chat</button>
+                    <ButtonGroup className="sidebar_button_group">
+                        <ToggleButton
+                            id="toggle-chat"
+                            type="radio"
+                            variant="outline-primary"
+                            name="radio"
+                            value="1"
+                            checked={listState === "Chats"}
+                            onChange={() => setListState("Chats")}
+                        >
+                            Chats
+                        </ToggleButton>
+                        <ToggleButton
+                            id="toggle-settings"
+                            type="radio"
+                            variant="outline-primary"
+                            name="radio"
+                            value="2"
+                            checked={listState === "Contacts"}
+                            onChange={() => setListState("Contacts")}
+                        >
+                            Contacts
+                        </ToggleButton>
+                    </ButtonGroup>
                 </div>
             </div>
             <div className="sidebar_search">
                 <input type="text" placeholder="Search..." />
                 <button id="search_btn">Search</button>
             </div>
-            <div className="chat_list">
-                {chats.length > 0 ? (
-                    sortedChats.map((chat, index) => (
-                        <div key={index} className={`chat_item ${chat.lastMessage?.seen ? `seen_item` : 'unseen_item'}`} onClick={() => handleItemClick(chat)}>
-                            <h3>{chat.title}</h3>
-                            <p>{chat.lastMessage?.content}</p>
-                            <hr />
-                            <div className='chat_item_status'>
-                                <span className='chat_item_status_time'>
-                                    {new Date(chat.lastMessage?.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                </span>
-                                <span className='chat_item_status_seen'>
-                                    {chat.lastMessage?.seen ? 'Seen' : 'Not Seen'}
-                                </span>
+            { listState === "Chats" ? (
+                <div className="chat_list">
+                    {chats.length > 0 ? (
+                        sortedChats.map((chat) => (
+                            <div
+                                key={chat._id} // Use unique identifier
+                                className={`chat_item ${chat.lastMessage?.seen ? 'seen_item' : 'unseen_item'}`}
+                                onClick={() => handleChatItemClick(chat._id)} // Pass type
+                            >
+                                <h3>{chat.title || "Untitled Chat"}</h3>
+                                <p>{chat.lastMessage?.content || "No messages yet"}</p>
+                                <hr />
+                                <div className="chat_item_status">
+                                    <span className="chat_item_status_time">
+                                        {chat.lastMessage?.createdAt
+                                            ? new Date(chat.lastMessage.createdAt).toLocaleTimeString([], {
+                                                  hour: '2-digit',
+                                                  minute: '2-digit',
+                                                  hour12: false,
+                                              })
+                                            : "N/A"}
+                                    </span>
+                                    <span className="chat_item_status_seen">
+                                        {chat.lastMessage?.seen ? 'Seen' : 'Not Seen'}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                    ))
-                ) : (
-                    <p>No chats available</p>
-                )}
-            </div>
+                        ))
+                    ) : (
+                        <p>No chats available</p>
+                    )}
+                </div>
+            ) : (
+                <div className="contact_list">
+                    {contacts.length > 0 ? (
+                        contacts.map((contact) => (
+                            <div
+                                key={contact._id} // Use unique identifier
+                                className="contact_item"
+                                onClick={() => handleContactItemClick(contact._id)} // Pass type
+                            >
+                                <h3>{contact.username || "Unknown User"}</h3>
+                                <p>{contact.status || "No status available"}</p>
+                            </div>
+                        ))
+                    ) : (
+                        <p>No contacts available</p>
+                    )}
+                </div>
+            )}
         </div>
     );
 };
