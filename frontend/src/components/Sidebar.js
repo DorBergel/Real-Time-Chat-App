@@ -34,6 +34,23 @@ const Sidebar = ({ username, chats = [], contacts = [], currentChat, setCurrentC
         }
     };
 
+    const handleSearchButtonClick = () => {
+        const searchInput = document.querySelector('.sidebar_search input');
+        switch (listState) {
+            case "Chats":
+                console.log('Sidebar - Search Chats:', searchInput.value);
+                // Implement chat search logic here
+                break;
+            case "Contacts":
+                console.log('Sidebar - Search Contacts:', searchInput.value);
+                // Implement contact search logic here
+                break;
+            default:
+                console.error('Sidebar - Unknown list state:', listState);
+                break;
+        }
+    };
+
     // Register a listener for WebSocket messages
     useEffect(() => {
         const handleWebSocketMessage = (message) => {
@@ -97,7 +114,7 @@ const Sidebar = ({ username, chats = [], contacts = [], currentChat, setCurrentC
                             Chats
                         </ToggleButton>
                         <ToggleButton
-                            id="toggle-settings"
+                            id="toggle-contact"
                             type="radio"
                             variant="outline-primary"
                             name="radio"
@@ -107,14 +124,35 @@ const Sidebar = ({ username, chats = [], contacts = [], currentChat, setCurrentC
                         >
                             Contacts
                         </ToggleButton>
+                        <ToggleButton
+                            id="toggle-onlineUsers"
+                            type="radio"
+                            variant='outline-primary'
+                            name="radio"
+                            value="3"
+                            checked={listState === "OnlineUsers"}
+                            onChange={() => setListState("OnlineUsers")}
+                        >
+                            Online Users
+                        </ToggleButton>
                     </ButtonGroup>
                 </div>
             </div>
             <div className="sidebar_search">
                 <input type="text" placeholder={listState === 'Contacts' ? "Add new contact" : "Search message"} />
-                <button id="search_btn">Search</button>
+                <button id="search_btn" onClick={handleSearchButtonClick}>Search</button>
             </div>
-            { listState === "Chats" ? (
+            
+        </div>
+    );
+};
+
+export default Sidebar;
+
+// TODO: Create new component for displaying chats or contacts or online users based on listState
+
+/*
+{ listState === "Chats" ? (
                 <div className="chat_list">
                     {chats.length > 0 ? (
                         sortedChats.map((chat) => (
@@ -164,8 +202,4 @@ const Sidebar = ({ username, chats = [], contacts = [], currentChat, setCurrentC
                     )}
                 </div>
             )}
-        </div>
-    );
-};
-
-export default Sidebar;
+                */
