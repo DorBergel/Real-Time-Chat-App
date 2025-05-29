@@ -111,7 +111,7 @@ const Sidebar = ({ username, chats = [], contacts = [], currentChat, setCurrentC
                 </div>
             </div>
             <div className="sidebar_search">
-                <input type="text" placeholder="Search..." />
+                <input type="text" placeholder={listState === 'Contacts' ? "Add new contact" : "Search message"} />
                 <button id="search_btn">Search</button>
             </div>
             { listState === "Chats" ? (
