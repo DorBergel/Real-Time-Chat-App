@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useWebSocket } from '../WebSocketContext'; // Use the hook, not the provider
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import ToggleButton from 'react-bootstrap/ToggleButton';
+import { fetchData } from '../fetcher';
 
-const Sidebar = ({ username, chats = [], contacts = [], currentChat, setCurrentChat }) => {
+const Sidebar = ({ username, chats = [], contacts = [], setContacts, currentChat, setCurrentChat, setChats}) => {
     const { socket, registerListener, unregisterListener } = useWebSocket(); // Use the hook to access the context
     const userId = localStorage.getItem('user-id'); // Get user ID from local storage
     const [listState, setListState] = useState("Chats"); 
@@ -25,30 +26,67 @@ const Sidebar = ({ username, chats = [], contacts = [], currentChat, setCurrentC
 
     const handleContactItemClick = (contactId) => {
         console.log('Sidebar - handleContactItemClick - Contact ID:', contactId);
-        // Find the contact with the given ID
         const selectedContact = contacts.find(contact => contact._id === contactId);
         if (selectedContact) {
-            console.log('Sidebar - handleContactItemClick - Selected Contact:', selectedContact);
+            const existingChat = chats.find(chat => chat.participants.includes(selectedContact._id));
+            if (existingChat) {
+                setCurrentChat(existingChat);
+            } else {
+                fetchData(`${process.env.REACT_APP_API_URL}/api/user/chats/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: { userId, contactId: selectedContact._id }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Sidebar - New chat created:', data);
+                    setCurrentChat(data.chat); // Set the current chat
+                    setChats(prevChats => [...prevChats, data.chat]); // Update the chat list
+                })
+                .catch(error => {
+                    console.error('Sidebar - Failed to create chat:', error);
+                    alert("Failed to create chat. Please try again.");
+                });
+            }
         } else {
-            console.error('Sidebar - handleContactItemClick - Contact not found:', contactId);
+            console.error('Sidebar - Contact not found:', contactId);
         }
     };
 
     const handleSearchButtonClick = () => {
-        const searchInput = document.querySelector('.sidebar_search input');
-        switch (listState) {
-            case "Chats":
-                console.log('Sidebar - Search Chats:', searchInput.value);
-                // Implement chat search logic here
-                break;
-            case "Contacts":
-                console.log('Sidebar - Search Contacts:', searchInput.value);
-                // Implement contact search logic here
-                break;
-            default:
-                console.error('Sidebar - Unknown list state:', listState);
-                break;
-        }
+        const searchInput = document.getElementById('searchContactInput');
+        console.log('Sidebar - handleSearchButtonClick - Search Input Value:', searchInput.value);
+        fetchData(`${process.env.REACT_APP_API_URL}/api/user/contacts/add/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: { contactUsername: searchInput.value }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Sidebar - handleSearchButtonClick - Search results:', data);
+            if (data.contacts && Array.isArray(data.contacts)) {
+                setContacts(data.contacts); 
+            }
+        }).catch(error => {
+            if(error.status === 404) {
+                console.error('Sidebar - handleSearchButtonClick - Contact not found:', error);
+                alert("Contact not found. Please check the username and try again.");
+            } else {
+
+                console.error('Sidebar - handleSearchButtonClick - There was a problem with the fetch operation:', error);
+                alert("Search failed. Please try again.");
+            }
+        })
     };
 
     // Register a listener for WebSocket messages
@@ -133,27 +171,14 @@ const Sidebar = ({ username, chats = [], contacts = [], currentChat, setCurrentC
                             checked={listState === "OnlineUsers"}
                             onChange={() => setListState("OnlineUsers")}
                         >
-                            Online Users
+                            OU
                         </ToggleButton>
                     </ButtonGroup>
                 </div>
             </div>
-            <div className="sidebar_search">
-                <input type="text" placeholder={listState === 'Contacts' ? "Add new contact" : "Search message"} />
-                <button id="search_btn" onClick={handleSearchButtonClick}>Search</button>
-            </div>
             
-        </div>
-    );
-};
-
-export default Sidebar;
-
-// TODO: Create new component for displaying chats or contacts or online users based on listState
-
-/*
-{ listState === "Chats" ? (
-                <div className="chat_list">
+            { listState === "Chats" ? (
+                <div className="items_list">
                     {chats.length > 0 ? (
                         sortedChats.map((chat) => (
                             <div
@@ -185,7 +210,20 @@ export default Sidebar;
                     )}
                 </div>
             ) : (
-                <div className="contact_list">
+                <div className="items_list">
+                    <div className="contact_search">
+                        <input
+                            id='searchContactInput'
+                            type="text"
+                            placeholder={`Search ${listState.toLowerCase()}...`}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                    handleSearchButtonClick();
+                                }
+                            }}
+                        />
+                        <button onClick={handleSearchButtonClick} className='searchContactBtn'>Search</button>
+                    </div>
                     {contacts.length > 0 ? (
                         contacts.map((contact) => (
                             <div
@@ -202,4 +240,8 @@ export default Sidebar;
                     )}
                 </div>
             )}
-                */
+        </div>
+    );
+};
+
+export default Sidebar;

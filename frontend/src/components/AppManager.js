@@ -136,7 +136,15 @@ function AppManager() {
   return (
     <div className="AppManager">
       <div className='toolbar_container'>
-        <Sidebar username={username} chats={userChats} contacts={userContacts} currentChat={currentChat} setCurrentChat={setCurrentChat} />
+        <Sidebar
+          username={username}
+          chats={userChats}
+          contacts={userContacts}
+          setContacts={setUserContacts}
+          currentChat={currentChat}
+          setCurrentChat={setCurrentChat}
+          setChats={setUserChats} // Pass setUserChats to Sidebar
+        />
       </div>
       <div className='chat_container'>
         {currentChat ? (

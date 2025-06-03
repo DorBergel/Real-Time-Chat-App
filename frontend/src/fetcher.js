@@ -9,7 +9,11 @@ export async function fetchData(url, options = {}) {
         'Authorization': `Bearer ${accessToken}`
     };
 
-    let response = await fetch(url, {method:options.method ? options.method : "GET", headers});
+    let response = await fetch(url, {
+        method: options.method ? options.method : "GET",
+        headers,
+        body: options.body ? JSON.stringify(options.body) : undefined
+    });
 
     if(response.status === 401 && refreshToken) {
         // if the access token is expired, try to refresh it
@@ -31,7 +35,11 @@ export async function fetchData(url, options = {}) {
 
             // Retry the original request with the new access token
             headers['Authorization'] = `Bearer ${accessToken}`;
-            response = await fetch(url, { headers });
+            response = await fetch(url, {
+                method: options.method ? options.method : "GET",
+                headers,
+                body: options.body ? JSON.stringify(options.body) : undefined
+            });
         } else {
             // If refresh token is also expired or invalid, redirect to login
             console.error('Failed to refresh token:', refreshResponse.statusText);
