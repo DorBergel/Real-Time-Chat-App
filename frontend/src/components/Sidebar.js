@@ -32,24 +32,14 @@ const Sidebar = ({ username, chats = [], contacts = [], setContacts, currentChat
             if (existingChat) {
                 setCurrentChat(existingChat);
             } else {
-                fetchData(`${process.env.REACT_APP_API_URL}/api/user/chats/create`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: { userId, contactId: selectedContact._id }
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Sidebar - New chat created:', data);
-                    setCurrentChat(data.chat); // Set the current chat
-                    setChats(prevChats => [...prevChats, data.chat]); // Update the chat list
-                })
-                .catch(error => {
-                    console.error('Sidebar - Failed to create chat:', error);
-                    alert("Failed to create chat. Please try again.");
-                });
+                // Create a new chat with the selected contact, send an event to the server
+                console.log('Sidebar - handleContactItemClick - Creating new chat with contact:', selectedContact);
+                socket.send(JSON.stringify({
+                    type: 'newChat',
+                    chatId: selectedContact._id,
+                    message: {userId: userId, contactId: selectedContact._id}
+                }));
+                
             }
         } else {
             console.error('Sidebar - Contact not found:', contactId);
@@ -161,17 +151,6 @@ const Sidebar = ({ username, chats = [], contacts = [], setContacts, currentChat
                             onChange={() => setListState("Contacts")}
                         >
                             Contacts
-                        </ToggleButton>
-                        <ToggleButton
-                            id="toggle-onlineUsers"
-                            type="radio"
-                            variant='outline-primary'
-                            name="radio"
-                            value="3"
-                            checked={listState === "OnlineUsers"}
-                            onChange={() => setListState("OnlineUsers")}
-                        >
-                            OU
                         </ToggleButton>
                     </ButtonGroup>
                 </div>

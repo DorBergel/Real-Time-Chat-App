@@ -20,6 +20,7 @@ const chatSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "./Message.js",
       require: false,
+      default: null
     },
   },
   {

@@ -210,8 +210,84 @@ exports.initializeChatWebSocket = (server) => {
                 );
               }});
             
+            } else if (type === "newChat") {
+              // <type> is "newChat", <chatId> is the ID of the contact, <message> {userId, contactId}
+              logger.logInfoMsg(`SOCKET New chat event received: ${JSON.stringify(message)}`);
+
+              const { userId, contactId } = message;
+
+              if (!userId || !contactId) {
+                logger.logErrorMsg("SOCKET Invalid new chat message format");
+                return;
+              }
+
+              const userUsername = await User.findById(userId).select("username");
+              const contactUsername = await User.findById(contactId).select("username");
+
+              // Create a new chat document in the database
+              const newChat = await Chat.create({
+                title: `${userUsername.username}&${contactUsername.username}`,
+                participants: [userId, contactId],
+              });
+
+              // Populate the newChat object with participants and lastMessage
+              const populatedChat = await Chat.findById(newChat._id)
+                .populate({ path: "participants", model: "User" })
+                .populate({ path: "lastMessage", model: "Message" });
+
+              logger.logInfoMsg(`SOCKET New chat created with ID: ${populatedChat._id}`);
+
+              // Add the new chat to both users' chats
+              await User.findByIdAndUpdate(userId, {
+                $addToSet: { chats: populatedChat._id },
+              });
+
+              await User.findByIdAndUpdate(contactId, {
+                $addToSet: { chats: populatedChat._id },
+              });
+
+              // Add the new chat to the online user and participant sets
+              onlineUsers.get(ws).add(populatedChat._id.toString());
+              onlineUsers.forEach((chatIdSet, clientSocket) => {
+                if (clientSocket.token) {
+                  const clientUserId = jwt.verify(
+                    clientSocket.token,
+                    process.env.JWT_SECRET
+                  ).id;
+                  if (clientUserId === userId || clientUserId === contactId) {
+                    chatIdSet.add(populatedChat._id.toString());
+                  }
+                }
+              }
+              );
+
+              // Broadcast the new chat to all connected clients in the same chat room
+              onlineUsers.forEach((chatIdSet, clientSocket) => {
+                if (chatIdSet.has(populatedChat._id.toString())) {
+                  clientSocket.send(
+                    JSON.stringify({
+                      type: "newChat",
+                      chatId: populatedChat._id,
+                      message: populatedChat,
+                    })
+                  );
+                }
+              });
+
+              // Send the populated chat object to the frontend
+              ws.send(
+                JSON.stringify({
+                  type: "newChat",
+                  chatId: populatedChat._id,
+                  message: populatedChat,
+                })
+              );
+
+
+
+              // TODO: Frontend should handle the new chat event creation and display it in the UI
+              // TODO: chat title should be created based on the participants' usernames
             }
-            
           } catch (err) {
           console.error("SOCKET Error processing message:", err);
         }

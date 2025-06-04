@@ -11,37 +11,37 @@ const Room = ({ currentChat }) => {
     // Register a listener for WebSocket messages
     useEffect(() => {
         const handleWebSocketMessage = (message) => {
+            if (!message || !message.type) {
+                console.warn('Invalid WebSocket message received:', message);
+                return;
+            }
+
             console.log('Room - WebSocket message received:', message);
             console.log('Room - WebSocket message currentChat:', currentChat);
-            if (message.type === 'chatMessage' && message.chatId === currentChat._id) {
-                // Update messages state with the new message
+
+            if (message.type === 'chatMessage' && currentChat?.['_id'] === message.chatId) {
                 setMessages((prevMessages) => [...prevMessages, message.message]);
 
-                // send a message seen event back to the server
-                if (socket && currentChat && currentChat._id === message.chatId && message.message.author._id !== userId) {
-                    console.log('Sending message seen event for chat:', currentChat._id);
+                if (
+                    socket &&
+                    currentChat &&
+                    currentChat._id === message.chatId &&
+                    message.message?.author?._id !== userId
+                ) {
                     const seenMessage = {
                         type: 'messageSeen',
                         chatId: currentChat._id,
-                        message: userId
+                        message: userId,
                     };
-                    socket.send(JSON.stringify(seenMessage)); // Send the seen event
+                    socket.send(JSON.stringify(seenMessage));
                 }
-            } 
-            else if (message.type === 'messageSeen') {
-                // Update all messages in the current chat to mark them as seen
-                if (currentChat && currentChat._id === message.chatId) {
-                  console.log('Message seen event received for chat:', message.chatId);
-                  
-                  // Update all messages in the current chat to mark them as seen
-                  
-                  setMessages((prevMessages) =>
+            } else if (message.type === 'messageSeen' && currentChat?.['_id'] === message.chatId) {
+                setMessages((prevMessages) =>
                     prevMessages.map((msg) =>
-                        !msg.seen ? { ...msg, seen: true } : msg // Only update if not already seen
+                        !msg.seen ? { ...msg, seen: true } : msg
                     )
                 );
-                }
-              }
+            }
         };
 
         registerListener(handleWebSocketMessage);
@@ -85,11 +85,13 @@ const Room = ({ currentChat }) => {
         const input = document.querySelector('.room_input input');
         const messageContent = input.value.trim();
 
+        console.log('currentChat:', currentChat);
+
         if (messageContent && socket) {
             // Send the message through WebSocket
             const message = {
                 type: 'chatMessage',
-                chatId: currentChat._id,
+                chatId: currentChat?._id,
                 message: messageContent,
             };
 
@@ -107,15 +109,16 @@ const Room = ({ currentChat }) => {
                 {messages.map((message, index) => (
                     <div
                         key={index}
-                        className={`message ${message.author._id === userId ? 'sent' : 'received'}`}
+                        className={`message ${message.author?._id === userId ? 'sent' : 'received'}`}
                     >
                         <p>
-                            <strong>{message.author.username}</strong>: {message.content}
+                            <strong>{message.author?.username || 'Unknown'}</strong>: {message.content}
                         </p>
-                        {(message.author._id === userId) ?
-                        <span className='seen-status'>
-                            {message.seen ? 'Seen' : 'Not Seen'}
-                        </span> : null}
+                        {message.author?._id === userId ? (
+                            <span className="seen-status">
+                                {message.seen ? 'Seen' : 'Not Seen'}
+                            </span>
+                        ) : null}
                     </div>
                 ))}
             </div>
