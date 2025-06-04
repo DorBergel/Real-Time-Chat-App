@@ -287,6 +287,22 @@ exports.initializeChatWebSocket = (server) => {
 
               // TODO: Frontend should handle the new chat event creation and display it in the UI
               // TODO: chat title should be created based on the participants' usernames
+            } else if (type === "typing") {
+              logger.logInfoMsg(`SOCKET Typing event received in chat ${chatId} by ${message}`);
+
+              // Broadcast the typing event to all connected clients in the same chat room except the sender
+              onlineUsers.forEach((chatIdSet, clientSocket) => {
+                if (chatIdSet.has(chatId) && clientSocket !== ws) {
+                  clientSocket.send(
+                    JSON.stringify({
+                      type: "typing",
+                      chatId: chatId,
+                      message: `${message} is typing...`,
+                    })
+                  );
+                }
+              }
+              );
             }
           } catch (err) {
           console.error("SOCKET Error processing message:", err);
