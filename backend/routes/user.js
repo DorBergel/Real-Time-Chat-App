@@ -48,4 +48,17 @@ router.get(
   authController.getUserById
 );
 
+router.post(
+"/contacts/add/:userId",
+verifyUserAccess,
+authController.addContact
+)
+
+router.post(
+  "/chats/create",
+  verifyUserAccess,
+  authController.createChat
+);
+
 module.exports = router;
+

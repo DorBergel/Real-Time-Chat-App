@@ -7,7 +7,7 @@
 .sidebar_header {
     border: 1px solid black;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     height: 20%;
     width: 100%;
     justify-content: space-between;
@@ -17,13 +17,24 @@
     display: flex;
     flex-direction: column;
     width: auto;
-    
+    height: 50%;
     justify-content: space-evenly;
 }
 
-.chat_list {
+.searchContactBtn {
+    width: 100%;
+    height: 30px;
+    background-color: #007bff; /* Bootstrap primary color */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.items_list {
     height: 80%; 
     width: 100%;
+    padding: 5px;
     border: 1px solid purple;
     overflow-y: auto; 
     display: flex;
