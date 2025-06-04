@@ -6,6 +6,7 @@ import { useWebSocket } from '../WebSocketContext';
 const Room = ({ currentChat }) => {
     const userId = localStorage.getItem('user-id'); // Get user ID from local storage
     const [messages, setMessages] = useState([]);
+    const [isTyping, setIsTyping] = useState(false);
     const { socket, registerListener, unregisterListener } = useWebSocket();
     
     // Register a listener for WebSocket messages
@@ -41,6 +42,9 @@ const Room = ({ currentChat }) => {
                         !msg.seen ? { ...msg, seen: true } : msg
                     )
                 );
+            } else if (message.type === 'typing' && currentChat?.['_id'] === message.chatId) {
+                setIsTyping(true);
+                setTimeout(() => setIsTyping(false), 3000); // Hide typing indicator after 3 seconds
             }
         };
 
@@ -51,6 +55,28 @@ const Room = ({ currentChat }) => {
             unregisterListener(handleWebSocketMessage);
         };
     }, [currentChat, registerListener, unregisterListener]);
+
+    // handle when user is typing
+    useEffect(() => {
+        const input = document.querySelector('.room_input input');
+        if (input && socket) {
+            const handleTyping = () => {
+                const typingMessage = {
+                    type: 'typing',
+                    chatId: currentChat?._id,
+                    messages: userId
+                };
+                socket.send(JSON.stringify(typingMessage));
+            };
+
+            input.addEventListener('input', handleTyping);
+
+            // Cleanup event listener on unmount
+            return () => {
+                input.removeEventListener('input', handleTyping);
+            };
+        }
+    }, [currentChat, socket]);
 
     // Effect to scroll to the bottom of the chat
     useEffect(() => {
@@ -121,6 +147,15 @@ const Room = ({ currentChat }) => {
                         ) : null}
                     </div>
                 ))}
+            </div>
+            <div className="typing-indicator">
+                {isTyping && (
+                    <div className="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                )}
             </div>
             <div className="room_input">
                 <input type="text" placeholder="Type a message..." />
