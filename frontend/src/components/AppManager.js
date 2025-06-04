@@ -105,6 +105,18 @@ function AppManager() {
 
         // Debugging log to verify state update
         console.log('AppManager: Updated userChats after messageSeen event:', userChats);
+      } else if (message.type === 'newChat') {
+        console.log('New chat created:', message.message);
+        // Add the new chat to the userChats state - without duplicates
+        if (!userChats.some(chat => chat._id === message.message._id)) {
+          console.log('Adding new chat to userChats:', message.message);
+          // Update userChats state with the new chat
+          setUserChats((prevChats) => {
+            const uniqueChats = prevChats.filter(chat => chat._id !== message.message._id);
+            return [...uniqueChats, message.message];
+          });
+          setCurrentChat(message.message); // Set the new chat as current chat
+        }
       }
     };
 
@@ -136,15 +148,7 @@ function AppManager() {
   return (
     <div className="AppManager">
       <div className='toolbar_container'>
-        <Sidebar
-          username={username}
-          chats={userChats}
-          contacts={userContacts}
-          setContacts={setUserContacts}
-          currentChat={currentChat}
-          setCurrentChat={setCurrentChat}
-          setChats={setUserChats} // Pass setUserChats to Sidebar
-        />
+        <Sidebar username={username} chats={userChats} contacts={userContacts} setContacts={setUserContacts} currentChat={currentChat} setCurrentChat={setCurrentChat} />
       </div>
       <div className='chat_container'>
         {currentChat ? (
