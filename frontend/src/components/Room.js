@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import "../styles/Room.css";
 import { fetchData } from "../fetcher";
 import { useWebSocket } from "../WebSocketContext";
@@ -8,60 +8,6 @@ const Room = ({ currentChat }) => {
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const { socket, registerListener, unregisterListener } = useWebSocket();
-
-  // Register a listener for WebSocket messages
-  useEffect(() => {
-    const handleWebSocketMessage = (message) => {
-      if (!message || !message.type) {
-        console.warn("Invalid WebSocket message received:", message);
-        return;
-      }
-
-      console.log("Room - WebSocket message received:", message);
-      console.log("Room - WebSocket message currentChat:", currentChat);
-
-      if (
-        message.type === "chatMessage" &&
-        currentChat?.["_id"] === message.chatId
-      ) {
-        setMessages((prevMessages) => [...prevMessages, message.message]);
-
-        if (
-          socket &&
-          currentChat &&
-          currentChat._id === message.chatId &&
-          message.message?.author?._id !== userId
-        ) {
-          const seenMessage = {
-            type: "messageSeen",
-            chatId: currentChat._id,
-            message: userId,
-          };
-          socket.send(JSON.stringify(seenMessage));
-        }
-      } else if (
-        message.type === "messageSeen" &&
-        currentChat?.["_id"] === message.chatId
-      ) {
-        setMessages((prevMessages) =>
-          prevMessages.map((msg) => (!msg.seen ? { ...msg, seen: true } : msg))
-        );
-      } else if (
-        message.type === "typing" &&
-        currentChat?.["_id"] === message.chatId
-      ) {
-        setIsTyping(true);
-        setTimeout(() => setIsTyping(false), 3000); // Hide typing indicator after 3 seconds
-      }
-    };
-
-    registerListener(handleWebSocketMessage);
-
-    // Cleanup function to unregister the listener
-    return () => {
-      unregisterListener(handleWebSocketMessage);
-    };
-  }, [currentChat, registerListener, unregisterListener]);
 
   // handle when user is typing
   useEffect(() => {
@@ -128,9 +74,16 @@ const Room = ({ currentChat }) => {
     if (messageContent && socket) {
       // Send the message through WebSocket
       const message = {
-        type: "chatMessage",
-        chatId: currentChat?._id,
-        message: messageContent,
+        type: "newMessage",
+        userId: userId,
+        load: {
+          chat: currentChat,
+          message: {
+            author: userId,
+            content: messageContent,
+            chat: currentChat._id,
+          },
+        },
       };
 
       socket.send(JSON.stringify(message)); // Send the message
