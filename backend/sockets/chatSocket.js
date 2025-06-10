@@ -1,50 +1,3 @@
-/**
- * Initializes the WebSocket server for real-time chat functionality.
- * 
- * @param {Object} server - The HTTP server instance to attach the WebSocket server to.
- * 
- * @description
- * This WebSocket server handles real-time communication for a chat application. 
- * It manages user connections, authenticates users via JWT tokens, and facilitates 
- * message broadcasting to relevant chat rooms. The server also updates the database 
- * with new messages and maintains the last message for each chat.
- * 
- * Key Features:
- * - Authenticates users using JWT tokens passed in the WebSocket connection URL.
- * - Automatically joins users to their respective chat rooms based on database records.
- * - Broadcasts messages to all users in the same chat room.
- * - Updates the last message in the chat document when a new message is sent.
- * - Tracks online users and their active chat rooms.
- * 
- * Events:
- * - `connection`: Triggered when a new client connects to the WebSocket server.
- * - `message`: Triggered when a client sends a message to the server.
- * - `close`: Triggered when a client disconnects from the WebSocket server.
- * - `upgrade`: Triggered when an HTTP request is upgraded to a WebSocket connection.
- * 
- * Frontend Team Notes:
- * - Ensure the WebSocket connection URL includes a valid JWT token as a query parameter (e.g., `ws://server-url?token=your-jwt-token`).
- * - Handle incoming messages of type `chatMessage` to display real-time chat updates.
- * - Implement additional message types (e.g., `typing`, `seen`) as needed for enhanced user experience.
- * - Be prepared to handle server-initiated messages for chat room updates and notifications.
- * 
- * Parameters Required from Frontend:
- * - WebSocket connection URL with a valid JWT token as a query parameter (e.g., `ws://server-url?token=your-jwt-token`).
- * - For sending a message:
- *   - `type`: The type of message (e.g., `chatMessage`).
- *   - `chatId`: The ID of the chat room where the message is being sent.
- *   - `message`: The content of the message.
- * 
- * Data Received by Frontend:
- * - For a new message:
- *   - `type`: The type of message (e.g., `chatMessage`).
- *   - `chatId`: The ID of the chat room where the message belongs.
- *   - `message`: The message object, including details like author and content.
- * - For server notifications:
- *   - `type`: Notification type (e.g., `message`).
- *   - `chatId`: The ID of the chat room related to the notification.
- *   - `message`: Notification content (e.g., "now you supposed to receive messages for [chatId]").
- */
 const webSocket = require("ws");
 const logger = require("../utils/logger");
 const Message = require("../models/Message");
@@ -53,16 +6,13 @@ const Chat = require("../models/Chat");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 
-// TODO : when user connect to socket he join to all rooms he is in by the db
-// TODO : when user disconnect from socket he leave all rooms he is in by the db
-// TODO : update the last message in the chat document when a new message is sent
+// ... all your imports remain unchanged
 
 exports.initializeChatWebSocket = (server) => {
   const wss = new webSocket.Server({ noServer: true });
 
-  const onlineUsers = new Map(); // Map to keep track of online users <WebSocket, Set<ChatId>>
+  const onlineUsers = new Map(); // Map <WebSocket, { userId, chats: Set<string> }>
 
-  // Handle HTTP upgrade requests to WebSocket
   server.on("upgrade", (request, socket, head) => {
     const url = request.url;
     const token = url?.split("?")[1]?.split("=")[1];
@@ -93,265 +43,218 @@ exports.initializeChatWebSocket = (server) => {
 
   wss.on("connection", async (ws) => {
     logger.logInfoMsg("SOCKET New client connected");
-    onlineUsers.set(ws, new Set()); // Initialize a new set for the connected client
+    const userId = ws.token ? jwt.decode(ws.token).id : null;
 
-    try {
-      const userId = jwt.verify(ws.token, process.env.JWT_SECRET).id;
-      const chatsIds = await User.findById(userId).select("chats");
+    onlineUsers.set(ws, { userId: userId, chats: new Set() });
 
-      console.log("SOCKET User's chat IDs:", chatsIds.chats);
-      chatsIds.chats.forEach((chatId) => {
-        // Add chatId as a string to the Set
-        onlineUsers.get(ws).add(chatId.toString());
-        console.log(`SOCKET ${userId} joined chat: ${chatId}`);
-        ws.send(
-          JSON.stringify({
-            type: "message",
-            chatId: chatId,
-            message: `now you supposed to receive messages for ${chatId}`,
-          })
+    if (!userId) {
+      console.error("SOCKET User ID not found in token");
+      ws.send(JSON.stringify({ error: "User ID not found in token" }));
+      ws.close();
+      return;
+    }
+
+    const userChats = await User.findById(userId).select("chats");
+
+    if (!userChats) {
+      console.error("SOCKET User not found:", userId);
+      ws.send(JSON.stringify({ error: "User not found" }));
+      ws.close();
+      return;
+    }
+
+    // 🛠️ Store all chat IDs as strings
+    onlineUsers.get(ws).chats = new Set(
+      userChats.chats.map((id) => id.toString())
+    );
+
+    ws.send(
+      JSON.stringify({
+        type: "connected",
+        userId: userId,
+        chats: Array.from(onlineUsers.get(ws).chats),
+      })
+    );
+
+    logger.logInfoMsg(
+      `SOCKET User ${userId} connected with chats: ${Array.from(
+        onlineUsers.get(ws).chats
+      )}`
+    );
+
+    ws.on("message", async (message) => {
+      try {
+        const parsedMessage = JSON.parse(message);
+        const { type, userId, load } = parsedMessage;
+
+        logger.logDebugMsg(
+          `SOCKET Received message of type: ${type} from user: ${userId}`
         );
+        logger.logDebugMsg(`SOCKET Message content: ${JSON.stringify(load)}`);
 
-        console.log("SOCKET Online users and their chat IDs:");
-        onlineUsers.forEach((chatIdSet, clientSocket) => {
-          const clientUserId = jwt.verify(
-            clientSocket.token,
-            process.env.JWT_SECRET
-          ).id;
-          const chatIds = Array.from(chatIdSet);
-          console.log(`SOCKET User ID: ${clientUserId}, Chat IDs: ${chatIds}`);
-        });
-      });
+        if (type === "newChat") {
+          const { participants, title } = load;
 
-      ws.on("message", async (data) => {
-        try {
-          const { type, chatId, message } = JSON.parse(data);
-          const chatIdObject = mongoose.Types.ObjectId.isValid(chatId)
-            ? new mongoose.Types.ObjectId(chatId)
-            : null;
-
-          if (!chatIdObject) {
-            logger.logErrorMsg(`SOCKET Invalid chatId: ${chatId}`);
+          if (!participants || participants.length === 0) {
+            logger.logErrorMsg("SOCKET No participants provided for new chat");
+            ws.send(JSON.stringify({ error: "No participants provided" }));
             return;
           }
 
-          logger.logInfoMsg(`SOCKET Received message: ${data}`);
+          const newChat = new Chat({ participants, title });
 
-          if (type === "chatMessage") {
-            logger.logInfoMsg(`SOCKET Received message in chat ${chatId}: ${message}`);
+          logger.logInfoMsg(`SOCKET New chat created with ID: ${newChat._id}`);
 
-            const authorId = jwt.verify(ws.token, process.env.JWT_SECRET).id;
+          ws.send(
+            JSON.stringify({
+              type: "chatCreated",
+              userId: userId,
+              load: newChat,
+            })
+          );
+        } else if (type === "newMessage") {
+          const { chat, message } = load;
 
-            const newMessage = await Message.create({
-              author: authorId,
-              chat: chatId,
-              content: message,
-            });
+          await Chat.findById(chat).then(async (foundChat) => {
+            const chatIdStr = chat._id?.toString() || chat?.toString();
 
-            const populatedMessage = await newMessage.populate({
-              path: "author",
-              select: "username",
-              model: User,
-            });
+            if (!foundChat) {
+              logger.logInfoMsg(`SOCKET Chat not found, creating new chat`);
 
-            // Broadcast the new message to all connected clients in the same chat room
-            onlineUsers.forEach((chatIdSet, clientSocket) => {
-              console.log(`SOCKET chatIdSet contents: ${[...chatIdSet]}`);
-              console.log(`SOCKET Checking if chatIdSet has chatId: ${chatId}`);
-            
-              if (chatIdSet.has(chatId)) {
-                clientSocket.send(
-                  JSON.stringify({
-                    type: "chatMessage",
-                    chatId: chatId,
-                    message: populatedMessage,
-                  })
-                );
-              }
-            });
-
-            await Chat.findByIdAndUpdate(
-              { _id: chatId },
-              { lastMessage: newMessage._id },
-              { new: true }
-            );
-          }
-          else if (type === "messageSeen") {
-            logger.logInfoMsg(`SOCKET Message seen event received in chat ${chatId} by ${message}`);
-
-            // if event sent from the author of the message - do not update the messages as seen
-            // find all unseen messages in the chat
-            const unseenMessages = await Message.find({
-              chat: chatId,
-              seen: false});
-            if (unseenMessages.length === 0) {
-              logger.logInfoMsg(`SOCKET No unseen messages in chat ${chatId}`);
-              return;
-            }
-
-            // update all unseen messages which are not sent by the event sender
-            await Message.updateMany({chat: chatId, seen: false, author: { $ne: message }}, { seen: true });
-            logger.logInfoMsg(`SOCKET Updated messages as seen in chat ${chatId} sent from ${message}`);
-
-            // use lastMessage to send the last message seen event
-            const lastMessage = await Message.findOne({ chat: chatId, seen: true })
-              .sort({ createdAt: -1 })
-              .populate({ path: "author", select: "username", model: User });
-
-            // Broadcast the seen message to all connected clients in the same chat room
-            onlineUsers.forEach((chatIdSet, clientSocket) => {
-              if (chatIdSet.has(chatId)) {
-                clientSocket.send(
-                  JSON.stringify({
-                    type: "messageSeen",
-                    chatId: chatId,
-                    message: lastMessage
-                  })
-                );
-              }});
-            
-            } else if (type === "newChat") {
-              // <type> is "newChat", <chatId> is the ID of the contact, <message> {userId, contactId}
-              logger.logInfoMsg(`SOCKET New chat event received: ${JSON.stringify(message)}`);
-
-              const { userId, contactId } = message;
-
-              if (!userId || !contactId) {
-                logger.logErrorMsg("SOCKET Invalid new chat message format");
-                return;
-              }
-
-              const userUsername = await User.findById(userId).select("username");
-              const contactUsername = await User.findById(contactId).select("username");
-
-              // Create a new chat document in the database
-              const newChat = await Chat.create({
-                title: `${userUsername.username}&${contactUsername.username}`,
-                participants: [userId, contactId],
+              const newChat = new Chat({
+                _id: chat._id,
+                participants: chat.participants,
+                title: chat.title,
               });
+              await newChat.save();
 
-              // Populate the newChat object with participants and lastMessage
-              const populatedChat = await Chat.findById(newChat._id)
-                .populate({ path: "participants", model: "User" })
-                .populate({ path: "lastMessage", model: "Message" });
-
-              logger.logInfoMsg(`SOCKET New chat created with ID: ${populatedChat._id}`);
-
-              // Add the new chat to both users' chats
-              await User.findByIdAndUpdate(userId, {
-                $addToSet: { chats: populatedChat._id },
-              });
-
-              await User.findByIdAndUpdate(contactId, {
-                $addToSet: { chats: populatedChat._id },
-              });
-
-              // Add the new chat to the online user and participant sets
-              onlineUsers.get(ws).add(populatedChat._id.toString());
-              onlineUsers.forEach((chatIdSet, clientSocket) => {
-                if (clientSocket.token) {
-                  const clientUserId = jwt.verify(
-                    clientSocket.token,
-                    process.env.JWT_SECRET
-                  ).id;
-                  if (clientUserId === userId || clientUserId === contactId) {
-                    chatIdSet.add(populatedChat._id.toString());
-                  }
-                }
-              }
+              logger.logInfoMsg(
+                `SOCKET New chat created with ID: ${newChat._id}`
               );
 
-              // Broadcast the new chat to all connected clients in the same chat room
-              onlineUsers.forEach((chatIdSet, clientSocket) => {
-                if (chatIdSet.has(populatedChat._id.toString())) {
-                  clientSocket.send(
-                    JSON.stringify({
-                      type: "newChat",
-                      chatId: populatedChat._id,
-                      message: populatedChat,
-                    })
-                  );
+              onlineUsers.forEach((userData) => {
+                if (
+                  userData.userId === userId ||
+                  chat.participants.includes(userData.userId)
+                ) {
+                  userData.chats.add(newChat._id.toString());
                 }
               });
 
-              // Send the populated chat object to the frontend
-              ws.send(
-                JSON.stringify({
-                  type: "newChat",
-                  chatId: populatedChat._id,
-                  message: populatedChat,
+              const newMessage = new Message({
+                chat: newChat._id,
+                author: userId,
+                content: message.content,
+              });
+              await newMessage.save();
+
+              // Update the lastMessage field in the chat
+              newChat.lastMessage = newMessage._id;
+              await newChat.save();
+
+              // Update participants' chats to include the new chat
+              await Promise.all(
+                chat.participants.map(async (participantId) => {
+                  const participant = await User.findById(participantId);
+                  if (participant) {
+                    participant.chats.push(newChat._id);
+                    await participant.save();
+                    logger.logInfoMsg(
+                      `SOCKET Added new chat ID ${newChat._id} to user ${participantId}`
+                    );
+                  } else {
+                    logger.logErrorMsg(
+                      `SOCKET Participant not found: ${participantId}`
+                    );
+                  }
                 })
               );
 
-
-
-              // TODO: Frontend should handle the new chat event creation and display it in the UI
-              // TODO: chat title should be created based on the participants' usernames
-            } else if (type === "typing") {
-              logger.logInfoMsg(`SOCKET Typing event received in chat ${chatId} by ${message}`);
-
-              // Broadcast the typing event to all connected clients in the same chat room except the sender
-              onlineUsers.forEach((chatIdSet, clientSocket) => {
-                if (chatIdSet.has(chatId) && clientSocket !== ws) {
-                  clientSocket.send(
+              onlineUsers.forEach((userData, ws) => {
+                if (userData.chats.has(newChat._id.toString())) {
+                  ws.send(
                     JSON.stringify({
-                      type: "typing",
-                      chatId: chatId,
-                      message: `${message} is typing...`,
+                      type: "newMessage",
+                      chatId: newChat._id,
+                      load: {
+                        message: newMessage,
+                        chat: newChat,
+                      },
                     })
                   );
                 }
-              }
-              );
-            }
-          } catch (err) {
-          console.error("SOCKET Error processing message:", err);
-        }
-      });
-
-      ws.on("close", () => {
-        logger.logInfoMsg("SOCKET Client disconnected");
-        onlineUsers.delete(ws); // Clean up the map
-      });
-    } catch (err) {
-      console.error("SOCKET Error during connection setup:", err);
-    }
-  });
-};
-
-
-/** DOCUMENTATION OF EVENTS
- * - `connection`: Emitted when a new client connects to the WebSocket server.
- * - `message`: Emitted when a message is received from a client.
- * - `close`: Emitted when a client disconnects from the WebSocket server.
- * - `error`: Emitted when an error occurs in the WebSocket server.
- * - `upgrade`: Emitted when an HTTP request is upgraded to a WebSocket connection.
- */
-
-/**
- // if event sent from the author of the message - do not update the messages as seen
-            const authorId = jwt.verify(ws.token, process.env.JWT_SECRET).id;
-            
-            // message val type should be the message id
-            logger.logInfoMsg(`SOCKET Message seen in chat ${chatId}: ${message}`);
-
-            if( authorId === message) {
-              logger.logInfoMsg(`SOCKET Author of the message is the same as the sender of the seen event - not updating messages as seen`);
-              return;
+              });
             } else {
-                await Message.updateMany({chat: chatId, seen: false}, { seen: true }, { new: true });
+              logger.logInfoMsg(`SOCKET Chat found with ID: ${foundChat._id}`);
 
-                logger.logInfoMsg(`SOCKET Updated messages as seen sent from ${message}`);
-                // Broadcast the seen message to all connected clients in the same chat room
-                onlineUsers.forEach((chatIdSet, clientSocket) => {
-                  if (chatIdSet.has(chatId)) {
-                    clientSocket.send(
+              const newMessage = new Message({
+                chat: foundChat._id,
+                author: userId,
+                content: message.content,
+              });
+              await newMessage.save();
+              logger.logInfoMsg(
+                `SOCKET New message created with ID: ${newMessage._id}`
+              );
+
+              // Update the lastMessage field in the chat
+              foundChat.lastMessage = newMessage._id;
+              await foundChat.save();
+
+              // populate the new message with author details
+              const populatedMessage = await Message.findById(
+                newMessage._id
+              ).populate({
+                path: "author",
+                model: User,
+                select: "username _id",
+              });
+              const foundChatIdStr = foundChat._id.toString();
+              let matched = false;
+
+              onlineUsers.forEach((userData, ws) => {
+                if (userData.chats.has(foundChatIdStr)) {
+                  matched = true;
+                  try {
+                    ws.send(
                       JSON.stringify({
-                        type: "messageSeen",
-                        chatId: chatId,
-                        message: `all messages in this chat are now seen.(event sent ${populatedMessages.author.username})`,
+                        type: "newMessage",
+                        chatId: foundChat._id,
+                        load: {
+                          message: populatedMessage,
+                          chat: foundChat,
+                        },
                       })
                     );
+                  } catch (error) {
+                    logger.logErrorMsg(
+                      `SOCKET Failed to send message to user ${userData.userId}: ${error.message}`
+                    );
                   }
-                });
- */
+                }
+              });
+
+              if (!matched) {
+                logger.logErrorMsg(
+                  `SOCKET No matching recipients found for chat ${foundChatIdStr}`
+                );
+              }
+            }
+          });
+        }
+      } catch (error) {
+        logger.logErrorMsg(`SOCKET Error processing message: ${error.message}`);
+        ws.send(JSON.stringify({ error: "Invalid message format" }));
+      }
+    });
+
+    ws.on("close", () => {
+      logger.logInfoMsg(`SOCKET User ${userId} disconnected`);
+      onlineUsers.delete(ws);
+    });
+
+    ws.on("error", (error) => {
+      logger.logErrorMsg(`SOCKET Error: ${error.message}`);
+    });
+  });
+};
