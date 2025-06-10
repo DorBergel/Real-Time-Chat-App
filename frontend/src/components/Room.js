@@ -9,27 +9,23 @@ const Room = ({ currentChat }) => {
   const [isTyping, setIsTyping] = useState(false);
   const { socket, registerListener, unregisterListener } = useWebSocket();
 
-  // handle when user is typing
+  // Register WebSocket listener for new messages
   useEffect(() => {
-    const input = document.querySelector(".room_input input");
-    if (input && socket) {
-      const handleTyping = () => {
-        const typingMessage = {
-          type: "typing",
-          chatId: currentChat?._id,
-          messages: userId,
-        };
-        socket.send(JSON.stringify(typingMessage));
-      };
+    const handleWebSocketMessage = (message) => {
+      console.log("Room - WebSocket message received:", message);
 
-      input.addEventListener("input", handleTyping);
+      if (message.type === "newMessage") {
+        console.log("Room - New message received:", message.load.message);
+        // Update messages state with the new message
+        setMessages((prevMessages) => [...prevMessages, message.load.message]);
+      }
+    };
+    registerListener(handleWebSocketMessage);
 
-      // Cleanup event listener on unmount
-      return () => {
-        input.removeEventListener("input", handleTyping);
-      };
-    }
-  }, [currentChat, socket]);
+    return () => {
+      unregisterListener(handleWebSocketMessage);
+    };
+  }, [socket, registerListener, unregisterListener]);
 
   // Effect to scroll to the bottom of the chat
   useEffect(() => {
@@ -69,7 +65,7 @@ const Room = ({ currentChat }) => {
     const input = document.querySelector(".room_input input");
     const messageContent = input.value.trim();
 
-    console.log("currentChat:", currentChat);
+    console.log("Room - handleSubmit - Message content:", messageContent);
 
     if (messageContent && socket) {
       // Send the message through WebSocket
@@ -85,7 +81,7 @@ const Room = ({ currentChat }) => {
           },
         },
       };
-
+      console.log("Room - handleSubmit - Sending message:", message);
       socket.send(JSON.stringify(message)); // Send the message
       input.value = ""; // Clear the input field
     }

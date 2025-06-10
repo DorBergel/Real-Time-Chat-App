@@ -28,12 +28,47 @@ function AppManager() {
           setUserChats((prevChats) => [...prevChats, message.load]);
           setCurrentChat(message.load); // Set the new chat as current chat
         }
+      } else if (message.type === "newMessage") {
+        console.log("New message received:", message.load.message);
+
+        // Find the chat that the message belongs to
+        const chatIndex = userChats.findIndex(
+          (chat) => chat._id === message.load.chat._id
+        );
+        console.log("Chat index found:", chatIndex);
+        if (chatIndex !== -1) {
+          // If chat exists, update the last message
+          console.log(
+            "Updating last message for existing chat:",
+            userChats[chatIndex]
+          );
+          setUserChats((prevChats) => {
+            const updatedChats = [...prevChats];
+            updatedChats[chatIndex] = {
+              ...updatedChats[chatIndex],
+              lastMessage: message.load.message, // Update the last message
+            };
+            return updatedChats;
+          });
+        } else {
+          // If chat does not exist, add it only if it's a valid chat object
+          if (message.load.chat && message.load.chat._id) {
+            console.log("Adding new chat to userChats:", message.load.chat);
+            setUserChats((prevChats) => {
+              const uniqueChats = prevChats.filter(
+                (chat) => chat._id !== message.load.chat._id
+              );
+              return [...uniqueChats, message.load.chat];
+            });
+          } else {
+            console.warn("Invalid chat object received:", message.load.chat);
+          }
+        }
       }
+      // Update the userChats state with the new message
     };
     registerListener(handleWebSocketMessage);
-    return () => {
-      unregisterListener(handleWebSocketMessage);
-    };
+    return () => unregisterListener(handleWebSocketMessage);
   }, [registerListener, unregisterListener, userChats]);
 
   // Effect to fetch username from backend

@@ -6,12 +6,13 @@ const Chat = require("../models/Chat");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 
+// ... all your imports remain unchanged
+
 exports.initializeChatWebSocket = (server) => {
   const wss = new webSocket.Server({ noServer: true });
 
-  const onlineUsers = new Map(); // Map to keep track of online users <WebSocket, Set<ChatId>>
+  const onlineUsers = new Map(); // Map <WebSocket, { userId, chats: Set<string> }>
 
-  // Handle HTTP upgrade requests to WebSocket
   server.on("upgrade", (request, socket, head) => {
     const url = request.url;
     const token = url?.split("?")[1]?.split("=")[1];
@@ -44,8 +45,8 @@ exports.initializeChatWebSocket = (server) => {
     logger.logInfoMsg("SOCKET New client connected");
     const userId = ws.token ? jwt.decode(ws.token).id : null;
 
-    // Section to store user ID and chats in a map
-    onlineUsers.set(ws, { userId: userId, chats: new Set() }); // Store user ID and chats in the map for each WebSocket
+    onlineUsers.set(ws, { userId: userId, chats: new Set() });
+
     if (!userId) {
       console.error("SOCKET User ID not found in token");
       ws.send(JSON.stringify({ error: "User ID not found in token" }));
@@ -53,7 +54,6 @@ exports.initializeChatWebSocket = (server) => {
       return;
     }
 
-    // Fetch user details and chats
     const userChats = await User.findById(userId).select("chats");
 
     if (!userChats) {
@@ -63,8 +63,18 @@ exports.initializeChatWebSocket = (server) => {
       return;
     }
 
-    // Store the chats in the onlineUsers map);
-    onlineUsers.get(ws).chats = new Set(userChats.chats); // Store chat IDs in the map
+    // 🛠️ Store all chat IDs as strings
+    onlineUsers.get(ws).chats = new Set(
+      userChats.chats.map((id) => id.toString())
+    );
+
+    ws.send(
+      JSON.stringify({
+        type: "connected",
+        userId: userId,
+        chats: Array.from(onlineUsers.get(ws).chats),
+      })
+    );
 
     logger.logInfoMsg(
       `SOCKET User ${userId} connected with chats: ${Array.from(
@@ -82,14 +92,6 @@ exports.initializeChatWebSocket = (server) => {
         );
         logger.logDebugMsg(`SOCKET Message content: ${JSON.stringify(load)}`);
 
-        /*
-        When a newChat event is received,
-        We create a new chat and send it to the user.
-        Note: The chat not saved to the database yet. 
-        The chat will be saved when the user sends a message in the chat.
-        This is to avoid creating empty chats in the database.
-        If the user sends a message in the chat, we will save the chat to the database.
-        */
         if (type === "newChat") {
           const { participants, title } = load;
 
@@ -99,14 +101,10 @@ exports.initializeChatWebSocket = (server) => {
             return;
           }
 
-          const newChat = new Chat({
-            participants: participants,
-            title: title,
-          });
+          const newChat = new Chat({ participants, title });
 
           logger.logInfoMsg(`SOCKET New chat created with ID: ${newChat._id}`);
 
-          // respond to the user with the new chat details
           ws.send(
             JSON.stringify({
               type: "chatCreated",
@@ -117,32 +115,32 @@ exports.initializeChatWebSocket = (server) => {
         } else if (type === "newMessage") {
           const { chat, message } = load;
 
-          // The chatId should not be existing in the db. But the Id should be valid.
-          // If the chatId is not existing in the db, we will create a new chat.
           await Chat.findById(chat).then(async (foundChat) => {
+            const chatIdStr = chat._id?.toString() || chat?.toString();
+
             if (!foundChat) {
               logger.logInfoMsg(`SOCKET Chat not found, creating new chat`);
+
               const newChat = new Chat({
                 _id: chat._id,
                 participants: chat.participants,
                 title: chat.title,
               });
               await newChat.save();
+
               logger.logInfoMsg(
                 `SOCKET New chat created with ID: ${newChat._id}`
               );
 
-              // Update the onlineUsers map for author and other participants to include the new chat
-              onlineUsers.forEach((userData, ws) => {
+              onlineUsers.forEach((userData) => {
                 if (
                   userData.userId === userId ||
                   chat.participants.includes(userData.userId)
                 ) {
-                  userData.chats.add(newChat._id);
+                  userData.chats.add(newChat._id.toString());
                 }
               });
 
-              // Create a new message
               const newMessage = new Message({
                 chat: newChat._id,
                 author: userId,
@@ -150,18 +148,38 @@ exports.initializeChatWebSocket = (server) => {
               });
               await newMessage.save();
 
-              logger.logInfoMsg(
-                `SOCKET New message created with ID: ${newMessage._id}`
+              // Update the lastMessage field in the chat
+              newChat.lastMessage = newMessage._id;
+              await newChat.save();
+
+              // Update participants' chats to include the new chat
+              await Promise.all(
+                chat.participants.map(async (participantId) => {
+                  const participant = await User.findById(participantId);
+                  if (participant) {
+                    participant.chats.push(newChat._id);
+                    await participant.save();
+                    logger.logInfoMsg(
+                      `SOCKET Added new chat ID ${newChat._id} to user ${participantId}`
+                    );
+                  } else {
+                    logger.logErrorMsg(
+                      `SOCKET Participant not found: ${participantId}`
+                    );
+                  }
+                })
               );
 
-              // Notify all participants about the new message
               onlineUsers.forEach((userData, ws) => {
-                if (userData.chats.has(newChat._id)) {
+                if (userData.chats.has(newChat._id.toString())) {
                   ws.send(
                     JSON.stringify({
                       type: "newMessage",
                       chatId: newChat._id,
-                      message: newMessage,
+                      load: {
+                        message: newMessage,
+                        chat: newChat,
+                      },
                     })
                   );
                 }
@@ -169,7 +187,6 @@ exports.initializeChatWebSocket = (server) => {
             } else {
               logger.logInfoMsg(`SOCKET Chat found with ID: ${foundChat._id}`);
 
-              // Create a new message in the existing chat
               const newMessage = new Message({
                 chat: foundChat._id,
                 author: userId,
@@ -180,18 +197,48 @@ exports.initializeChatWebSocket = (server) => {
                 `SOCKET New message created with ID: ${newMessage._id}`
               );
 
-              // Notify all participants about the new message
+              // Update the lastMessage field in the chat
+              foundChat.lastMessage = newMessage._id;
+              await foundChat.save();
+
+              // populate the new message with author details
+              const populatedMessage = await Message.findById(
+                newMessage._id
+              ).populate({
+                path: "author",
+                model: User,
+                select: "username _id",
+              });
+              const foundChatIdStr = foundChat._id.toString();
+              let matched = false;
+
               onlineUsers.forEach((userData, ws) => {
-                if (userData.chats.has(foundChat._id)) {
-                  ws.send(
-                    JSON.stringify({
-                      type: "newMessage",
-                      chatId: foundChat._id,
-                      message: newMessage,
-                    })
-                  );
+                if (userData.chats.has(foundChatIdStr)) {
+                  matched = true;
+                  try {
+                    ws.send(
+                      JSON.stringify({
+                        type: "newMessage",
+                        chatId: foundChat._id,
+                        load: {
+                          message: populatedMessage,
+                          chat: foundChat,
+                        },
+                      })
+                    );
+                  } catch (error) {
+                    logger.logErrorMsg(
+                      `SOCKET Failed to send message to user ${userData.userId}: ${error.message}`
+                    );
+                  }
                 }
               });
+
+              if (!matched) {
+                logger.logErrorMsg(
+                  `SOCKET No matching recipients found for chat ${foundChatIdStr}`
+                );
+              }
             }
           });
         }
@@ -200,9 +247,10 @@ exports.initializeChatWebSocket = (server) => {
         ws.send(JSON.stringify({ error: "Invalid message format" }));
       }
     });
+
     ws.on("close", () => {
       logger.logInfoMsg(`SOCKET User ${userId} disconnected`);
-      onlineUsers.delete(ws); // Remove the user from the onlineUsers map
+      onlineUsers.delete(ws);
     });
 
     ws.on("error", (error) => {
