@@ -64,8 +64,26 @@ function AppManager() {
             console.warn("Invalid chat object received:", message.load.chat);
           }
         }
+      } else if (message.type === "messageSeen") {
+        console.log("Message seen received:", message.load);
+
+        // Update the message state to mark it as seen
+        setUserChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat._id === message.load.chatId
+              ? {
+                  ...chat,
+                  lastMessage: {
+                    ...chat.lastMessage,
+                    seen: true, // Mark the last message as seen
+                  },
+                }
+              : chat
+          )
+        );
+
+        
       }
-      // Update the userChats state with the new message
     };
     registerListener(handleWebSocketMessage);
     return () => unregisterListener(handleWebSocketMessage);
@@ -150,29 +168,6 @@ function AppManager() {
               : chat
           )
         );
-      } else if (message.type === "messageSeen") {
-        console.log("Message seen event received for chat:", message.chatId);
-
-        // Update the userChats state to mark the last message as seen
-        setUserChats((prevChats) =>
-          prevChats.map((chat) =>
-            chat._id === message.chatId
-              ? {
-                  ...chat,
-                  lastMessage: {
-                    ...chat.lastMessage,
-                    seen: true, // Update the seen status
-                  },
-                }
-              : chat
-          )
-        );
-
-        // Debugging log to verify state update
-        console.log(
-          "AppManager: Updated userChats after messageSeen event:",
-          userChats
-        );
       } else if (message.type === "newChat") {
         console.log("New chat created:", message.message);
         // Add the new chat to the userChats state - without duplicates
@@ -196,30 +191,6 @@ function AppManager() {
       unregisterListener(handleWebSocketMessage);
     };
   }, [registerListener, unregisterListener, userChats]);
-
-  // Effect to handle current chat changes
-  useEffect(() => {
-    if (currentChat) {
-      console.log("Current chat changed:", currentChat);
-
-      // if last message is sent by the other user, mark it as seen
-      if (
-        currentChat.lastMessage &&
-        currentChat.lastMessage.sender !== userId &&
-        socket
-      ) {
-        console.log(
-          "Send messageSeen event for all messages in the current chat"
-        );
-        const messageSeenEvent = {
-          type: "messageSeen",
-          chatId: currentChat._id,
-          message: userId,
-        };
-        socket.send(JSON.stringify(messageSeenEvent));
-      }
-    }
-  }, [currentChat]);
 
   return (
     <div className="AppManager">

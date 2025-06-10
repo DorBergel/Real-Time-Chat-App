@@ -9,6 +9,10 @@ const Room = ({ currentChat }) => {
   const [isTyping, setIsTyping] = useState(false);
   const { socket, registerListener, unregisterListener } = useWebSocket();
 
+  // TODO: Handle messageSeen received from WebSocket
+  // TODO: Send messageSeen when a message is scrolled into view
+
+
   // Register WebSocket listener for new messages
   useEffect(() => {
     const handleWebSocketMessage = (message) => {
@@ -16,8 +20,23 @@ const Room = ({ currentChat }) => {
 
       if (message.type === "newMessage") {
         console.log("Room - New message received:", message.load.message);
-        // Update messages state with the new message
-        setMessages((prevMessages) => [...prevMessages, message.load.message]);
+        // Add the new message to the messages state - just if it belongs to the current chat
+        if (message.load.chat._id === currentChat._id) {
+          console.log("Room - Adding new message to messages state:", message.load.message);
+          setMessages((prevMessages) => [...prevMessages, message.load.message]);
+        } else {
+          console.log("Room - Message does not belong to current chat, ignoring.");
+        }
+      } else if (message.type === "messageSeen") {
+        console.log("Room - Message seen received:", message.load);
+        // Update the message state to mark it as seen
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            msg._id === message.load.messageId
+              ? { ...msg, seen: true }
+              : msg
+          )
+        );
       }
     };
     registerListener(handleWebSocketMessage);
@@ -29,10 +48,40 @@ const Room = ({ currentChat }) => {
 
   // Effect to scroll to the bottom of the chat
   useEffect(() => {
+    console.log("Room - useEffect - Scrolling to bottom of chat");
+    console.log("Room - useEffect - messages:", messages);
     const chatContainer = document.querySelector(".room_messages");
     if (chatContainer) {
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
+
+    const unseenMessages = messages.filter(
+      (message) => !message.seen && message.author?._id !== userId
+    );
+
+    if (unseenMessages.length > 0) {
+      console.log("Room - useEffect - Unseen messages found:", unseenMessages);
+      
+      // Mark unseen messages as seen
+      unseenMessages.forEach((message) => {
+        console.log("Room - useEffect - Sending messageSeen:", message);
+        
+        // Update the message state to mark it as seen
+        message.seen = true;
+    
+        // Send messageSeen through WebSocket
+        socket.send(
+            JSON.stringify({
+                type: "messageSeen",
+                userId: userId,
+                load: {
+                    chatId: currentChat._id,
+                    messageId: message._id
+                }}));
+            });
+        
+    }
+
   }, [messages]); // This effect runs whenever messages change
 
   // Effect to fetch messages for the current chat
@@ -57,6 +106,9 @@ const Room = ({ currentChat }) => {
         .catch((error) => {
           console.error("There was a problem with the fetch operation:", error);
         });
+    } else {
+      console.log("Room - useEffect - No valid current chat to fetch messages for.");
+      setMessages([]); // Clear messages if currentChat is invalid
     }
   }, [currentChat]); // Effect runs when currentChat changes
 
