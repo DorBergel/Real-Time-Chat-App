@@ -133,8 +133,8 @@ const Sidebar = ({
 
   // Debug effect to log user data
   useEffect(() => {
-    console.log("Sidebar - useEffect - Username:", username);
-    console.log("Sidebar - useEffect - Chats:", chats);
+    console.log("Sidebar - DEBUG - Username:", username);
+    console.log("Sidebar - DEBUG - Chats:", chats);
   }, [username, chats]);
 
   // sort chats by last message time

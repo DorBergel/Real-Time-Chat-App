@@ -9,23 +9,7 @@ const Room = ({ currentChat }) => {
   const [isTyping, setIsTyping] = useState(false);
   const { socket, registerListener, unregisterListener } = useWebSocket();
 
-  // Register WebSocket listener for new messages
-  useEffect(() => {
-    const handleWebSocketMessage = (message) => {
-      console.log("Room - WebSocket message received:", message);
 
-      if (message.type === "newMessage") {
-        console.log("Room - New message received:", message.load.message);
-        // Update messages state with the new message
-        setMessages((prevMessages) => [...prevMessages, message.load.message]);
-      }
-    };
-    registerListener(handleWebSocketMessage);
-
-    return () => {
-      unregisterListener(handleWebSocketMessage);
-    };
-  }, [socket, registerListener, unregisterListener]);
 
   // Effect to scroll to the bottom of the chat
   useEffect(() => {
@@ -130,3 +114,25 @@ const Room = ({ currentChat }) => {
 };
 
 export default Room;
+
+/**
+
+  // Register WebSocket listener for new messages
+  useEffect(() => {
+    const handleWebSocketMessage = (message) => {
+      console.log("Room - WebSocket message received:", message);
+
+      if (message.type === "newMessage") {
+        console.log("Room - New message received:", message.load.message);
+        // Update messages state with the new message
+        setMessages((prevMessages) => [...prevMessages, message.load.message]);
+      }
+    };
+    registerListener(handleWebSocketMessage);
+
+    return () => {
+      unregisterListener(handleWebSocketMessage);
+    };
+  }, [socket, registerListener, unregisterListener]);
+
+ */
