@@ -21,6 +21,7 @@ const Sidebar = ({
 
   const handleChatItemClick = (chatId) => {
     console.log("Sidebar - handleChatItemClick - Chat ID:", chatId);
+    
     // Find the chat with the given ID
     const selectedChat = chats.find((chat) => chat._id === chatId);
     if (selectedChat) {
@@ -133,8 +134,8 @@ const Sidebar = ({
 
   // Debug effect to log user data
   useEffect(() => {
-    console.log("Sidebar - useEffect - Username:", username);
-    console.log("Sidebar - useEffect - Chats:", chats);
+    console.log("Sidebar - DEBUG - Username:", username);
+    console.log("Sidebar - DEBUG - Chats:", chats);
   }, [username, chats]);
 
   // sort chats by last message time

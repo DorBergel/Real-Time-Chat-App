@@ -60,5 +60,11 @@ router.post(
   authController.createChat
 );
 
+router.get(
+  "/user/:userId",
+  verifyUserAccess,
+  authController.getUserDocById
+);
+
 module.exports = router;
 

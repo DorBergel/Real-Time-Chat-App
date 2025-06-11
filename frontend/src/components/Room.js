@@ -3,53 +3,16 @@ import "../styles/Room.css";
 import { fetchData } from "../fetcher";
 import { useWebSocket } from "../WebSocketContext";
 
-const Room = ({ currentChat }) => {
+const Room = ({ currentChat, messages= [], setMessages }) => {
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
-  const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const { socket, registerListener, unregisterListener } = useWebSocket();
 
-  // TODO: Handle messageSeen received from WebSocket
-  // TODO: Send messageSeen when a message is scrolled into view
 
-
-  // Register WebSocket listener for new messages
-  useEffect(() => {
-    const handleWebSocketMessage = (message) => {
-      console.log("Room - WebSocket message received:", message);
-
-      if (message.type === "newMessage") {
-        console.log("Room - New message received:", message.load.message);
-        // Add the new message to the messages state - just if it belongs to the current chat
-        if (message.load.chat._id === currentChat._id) {
-          console.log("Room - Adding new message to messages state:", message.load.message);
-          setMessages((prevMessages) => [...prevMessages, message.load.message]);
-        } else {
-          console.log("Room - Message does not belong to current chat, ignoring.");
-        }
-      } else if (message.type === "messageSeen") {
-        console.log("Room - Message seen received:", message.load);
-        // Update the message state to mark it as seen
-        setMessages((prevMessages) =>
-          prevMessages.map((msg) =>
-            msg._id === message.load.messageId
-              ? { ...msg, seen: true }
-              : msg
-          )
-        );
-      }
-    };
-    registerListener(handleWebSocketMessage);
-
-    return () => {
-      unregisterListener(handleWebSocketMessage);
-    };
-  }, [socket, registerListener, unregisterListener]);
 
   // Effect to scroll to the bottom of the chat
   useEffect(() => {
-    console.log("Room - useEffect - Scrolling to bottom of chat");
-    console.log("Room - useEffect - messages:", messages);
+    console.log("Room - useEffect - Scrolling to bottom of chat messages - currentChat:", currentChat);
     const chatContainer = document.querySelector(".room_messages");
     if (chatContainer) {
       chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -86,6 +49,7 @@ const Room = ({ currentChat }) => {
 
   // Effect to fetch messages for the current chat
   useEffect(() => {
+    console.log("Room - useEffect - Fetching messages for current chat:", currentChat);
     if (currentChat && !currentChat._id.toString().includes("temp-")) {
       fetchData(
         `${process.env.REACT_APP_API_URL}/api/message/${currentChat._id}`
@@ -107,8 +71,8 @@ const Room = ({ currentChat }) => {
           console.error("There was a problem with the fetch operation:", error);
         });
     } else {
-      console.log("Room - useEffect - No valid current chat to fetch messages for.");
-      setMessages([]); // Clear messages if currentChat is invalid
+      console.warn("Room - useEffect - No valid current chat to fetch messages for.");
+      setMessages([]); // Clear messages if no valid chat
     }
   }, [currentChat]); // Effect runs when currentChat changes
 
@@ -182,3 +146,25 @@ const Room = ({ currentChat }) => {
 };
 
 export default Room;
+
+/**
+
+  // Register WebSocket listener for new messages
+  useEffect(() => {
+    const handleWebSocketMessage = (message) => {
+      console.log("Room - WebSocket message received:", message);
+
+      if (message.type === "newMessage") {
+        console.log("Room - New message received:", message.load.message);
+        // Update messages state with the new message
+        setMessages((prevMessages) => [...prevMessages, message.load.message]);
+      }
+    };
+    registerListener(handleWebSocketMessage);
+
+    return () => {
+      unregisterListener(handleWebSocketMessage);
+    };
+  }, [socket, registerListener, unregisterListener]);
+
+ */
