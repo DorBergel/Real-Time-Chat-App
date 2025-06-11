@@ -3,9 +3,8 @@ import "../styles/Room.css";
 import { fetchData } from "../fetcher";
 import { useWebSocket } from "../WebSocketContext";
 
-const Room = ({ currentChat }) => {
+const Room = ({ currentChat, messages= [], setMessages }) => {
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
-  const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const { socket, registerListener, unregisterListener } = useWebSocket();
 
@@ -13,6 +12,7 @@ const Room = ({ currentChat }) => {
 
   // Effect to scroll to the bottom of the chat
   useEffect(() => {
+    console.log("Room - useEffect - Scrolling to bottom of chat messages - currentChat:", currentChat);
     const chatContainer = document.querySelector(".room_messages");
     if (chatContainer) {
       chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -21,6 +21,7 @@ const Room = ({ currentChat }) => {
 
   // Effect to fetch messages for the current chat
   useEffect(() => {
+    console.log("Room - useEffect - Fetching messages for current chat:", currentChat);
     if (currentChat && !currentChat._id.toString().includes("temp-")) {
       fetchData(
         `${process.env.REACT_APP_API_URL}/api/message/${currentChat._id}`
@@ -41,6 +42,9 @@ const Room = ({ currentChat }) => {
         .catch((error) => {
           console.error("There was a problem with the fetch operation:", error);
         });
+    } else {
+      console.warn("Room - useEffect - No valid current chat to fetch messages for.");
+      setMessages([]); // Clear messages if no valid chat
     }
   }, [currentChat]); // Effect runs when currentChat changes
 

@@ -21,6 +21,7 @@ const Sidebar = ({
 
   const handleChatItemClick = (chatId) => {
     console.log("Sidebar - handleChatItemClick - Chat ID:", chatId);
+    
     // Find the chat with the given ID
     const selectedChat = chats.find((chat) => chat._id === chatId);
     if (selectedChat) {

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Room from "./Room";
 import { fetchData } from "../fetcher";
 import { useWebSocket } from "../WebSocketContext";
+import { handleNewChatCreated, handleNewMessageReceived } from "../eventHandeling";
 
 // TODO: need that lastMessage field in chat document be populated with the last message in the chat
 
@@ -13,12 +14,34 @@ function AppManager() {
   const [userChats, setUserChats] = useState([]); // State to hold user chats
   const [userContacts, setUserContacts] = useState([]); // State to hold user contacts
   const [currentChat, setCurrentChat] = useState(null); // State to hold current chat
+  const [currentMessages, setCurrentMessages] = useState([]); // State to hold current messages
   const { socket, registerListener, unregisterListener } = useWebSocket(); // Access WebSocket context
 
   // Register WebSocket listener
   useEffect(() => {
     const handleWebSocketMessage = (message) => {
       console.log("AppManager: WebSocket message received:", message);
+
+      if (message.type === "newMessage") {
+        handleNewMessageReceived(
+          message,
+          userChats,
+          setUserChats,
+          currentMessages,
+          setCurrentMessages,
+          currentChat
+        );
+      }
+      else if (message.type === "chatCreated") {
+        handleNewChatCreated(
+          message,
+          userChats,
+          setUserChats,
+          currentChat,
+          setCurrentChat
+        );
+      }
+
     };
     registerListener(handleWebSocketMessage);
     return () => unregisterListener(handleWebSocketMessage);
@@ -61,7 +84,10 @@ function AppManager() {
       </div>
       <div className="chat_container">
         {currentChat ? (
-          <Room currentChat={currentChat} />
+          <Room
+          currentChat={currentChat}
+          messages={currentMessages}
+          setMessages={setCurrentMessages} />
         ) : (
           <div className="welcome_message">
             <h1>Welcome to the Chat App</h1>
