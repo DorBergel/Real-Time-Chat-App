@@ -57,7 +57,7 @@ const Sidebar = ({
         // Create a new temporary chat object
         const newChat = {
           _id: `temp-${contactId}`, // Temporary ID for the new chat
-          title: selectedContact.username || "New Chat",
+          title: `${selectedContact.username} & ${username}` || "New Chat",
           participants: [userId, selectedContact._id],
         };
 
