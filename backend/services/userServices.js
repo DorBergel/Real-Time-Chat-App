@@ -125,17 +125,3 @@ exports.createChat = async (userId, contactId) => {
 
     return populatedChat;
 };
-
-exports.getUserDocById = async (userId) => {
-  // Find the user by ID and return the user document
-  const user = await User.findById(userId).populate({
-    path: "chats",
-    populate: { path: "lastMessage", model: "Message" }
-  }).populate("contacts");
-  logDebugMsg(`getUserDocById: userId: ${userId}, user: ${user}`);
-  if (!user) {
-    throw new Error("User not found");
-  }
-
-  return user;
-};

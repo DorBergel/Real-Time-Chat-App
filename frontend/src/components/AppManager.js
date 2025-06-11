@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Room from "./Room";
 import { fetchData } from "../fetcher";
 import { useWebSocket } from "../WebSocketContext";
-import { handleNewChatCreated, handleNewMessageReceived } from "../eventHandeling";
 
 // TODO: need that lastMessage field in chat document be populated with the last message in the chat
 
@@ -14,7 +13,6 @@ function AppManager() {
   const [userChats, setUserChats] = useState([]); // State to hold user chats
   const [userContacts, setUserContacts] = useState([]); // State to hold user contacts
   const [currentChat, setCurrentChat] = useState(null); // State to hold current chat
-  const [currentMessages, setCurrentMessages] = useState([]); // State to hold current messages
   const { socket, registerListener, unregisterListener } = useWebSocket(); // Access WebSocket context
 
   // Register WebSocket listener
@@ -22,36 +20,78 @@ function AppManager() {
     const handleWebSocketMessage = (message) => {
       console.log("AppManager: WebSocket message received:", message);
 
-      if (message.type === "newMessage") {
-        handleNewMessageReceived(
-          message,
-          userChats,
-          setUserChats,
-          currentMessages,
-          setCurrentMessages,
-          currentChat
-        );
-      }
-      else if (message.type === "chatCreated") {
-        handleNewChatCreated(
-          message,
-          userChats,
-          setUserChats,
-          currentChat,
-          setCurrentChat
-        );
-      }
+      if (message.type === "chatCreated") {
+        console.log("New chat created:", message.chat);
+        // Add the new chat to the userChats state - without duplicates
+        if (!userChats.some((chat) => chat._id === message.chat._id)) {
+          console.log("Adding new chat to userChats:", message.load);
+          setUserChats((prevChats) => [...prevChats, message.load]);
+          setCurrentChat(message.load); // Set the new chat as current chat
+        }
+      } else if (message.type === "newMessage") {
+        console.log("New message received:", message.load.message);
 
+        // Find the chat that the message belongs to
+        const chatIndex = userChats.findIndex(
+          (chat) => chat._id === message.load.chat._id
+        );
+        console.log("Chat index found:", chatIndex);
+        if (chatIndex !== -1) {
+          // If chat exists, update the last message
+          console.log(
+            "Updating last message for existing chat:",
+            userChats[chatIndex]
+          );
+          setUserChats((prevChats) => {
+            const updatedChats = [...prevChats];
+            updatedChats[chatIndex] = {
+              ...updatedChats[chatIndex],
+              lastMessage: message.load.message, // Update the last message
+            };
+            return updatedChats;
+          });
+        } else {
+          // If chat does not exist, add it only if it's a valid chat object
+          if (message.load.chat && message.load.chat._id) {
+            console.log("Adding new chat to userChats:", message.load.chat);
+            setUserChats((prevChats) => {
+              const uniqueChats = prevChats.filter(
+                (chat) => chat._id !== message.load.chat._id
+              );
+              return [...uniqueChats, message.load.chat];
+            });
+          } else {
+            console.warn("Invalid chat object received:", message.load.chat);
+          }
+        }
+      } else if (message.type === "messageSeen") {
+        console.log("Message seen received:", message.load);
+
+        // Update the message state to mark it as seen
+        setUserChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat._id === message.load.chatId
+              ? {
+                  ...chat,
+                  lastMessage: {
+                    ...chat.lastMessage,
+                    seen: true, // Mark the last message as seen
+                  },
+                }
+              : chat
+          )
+        );
+
+        
+      }
     };
     registerListener(handleWebSocketMessage);
     return () => unregisterListener(handleWebSocketMessage);
   }, [registerListener, unregisterListener, userChats]);
-  
-  // Register WebSocket listener
 
-  // Effect to fetch user data from backend
+  // Effect to fetch username from backend
   useEffect(() => {
-    fetchData(`${process.env.REACT_APP_API_URL}/api/user/user/${userId}`)
+    fetchData(`${process.env.REACT_APP_API_URL}/api/user/username/${userId}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -59,16 +99,98 @@ function AppManager() {
         return response.json();
       })
       .then((data) => {
-        console.log("AppManager - useEffect - User data fetched successfully:", data);
-        setUsername(data.user.username);
-        setUserContacts(data.user.contacts || []);
-        setUserChats(data.user.chats || []);
+        console.log(
+          "AppManager - useEffect - User data fetched successfully:",
+          data
+        );
+        setUsername(data.username);
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
       });
-  }
-  , [userId]);
+  }, [userId]);
+
+  // Effect to fetch user contacts from backend
+  useEffect(() => {
+    fetchData(`${process.env.REACT_APP_API_URL}/api/user/contacts/${userId}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log(
+          "AppManager - useEffect - User contacts fetched successfully:",
+          data
+        );
+        // Assuming data.contacts is an array of contact objects
+        setUserContacts(data.contacts);
+      })
+      .catch((error) => {
+        console.error("There was a problem with the fetch operation:", error);
+        setUserContacts([]);
+      });
+  }, [userId]);
+
+  // Effect to fetch user chats from backend
+  useEffect(() => {
+    fetchData(`${process.env.REACT_APP_API_URL}/api/user/chats/${userId}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log(
+          "AppManager - useEffect - User chats fetched successfully:",
+          data
+        );
+        setUserChats(data.chats);
+      })
+      .catch((error) => {
+        console.error("There was a problem with the fetch operation:", error);
+        setUserChats([]);
+      });
+  }, [userId]);
+
+  // WebSocket listener to update chats dynamically
+  useEffect(() => {
+    const handleWebSocketMessage = (message) => {
+      console.log("AppManager: WebSocket message received:", message);
+
+      if (message.type === "chatMessage") {
+        setUserChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat._id === message.chatId
+              ? { ...chat, lastMessage: message.message }
+              : chat
+          )
+        );
+      } else if (message.type === "newChat") {
+        console.log("New chat created:", message.message);
+        // Add the new chat to the userChats state - without duplicates
+        if (!userChats.some((chat) => chat._id === message.message._id)) {
+          console.log("Adding new chat to userChats:", message.message);
+          // Update userChats state with the new chat
+          setUserChats((prevChats) => {
+            const uniqueChats = prevChats.filter(
+              (chat) => chat._id !== message.message._id
+            );
+            return [...uniqueChats, message.message];
+          });
+          setCurrentChat(message.message); // Set the new chat as current chat
+        }
+      }
+    };
+
+    registerListener(handleWebSocketMessage);
+
+    return () => {
+      unregisterListener(handleWebSocketMessage);
+    };
+  }, [registerListener, unregisterListener, userChats]);
 
   return (
     <div className="AppManager">
@@ -84,10 +206,7 @@ function AppManager() {
       </div>
       <div className="chat_container">
         {currentChat ? (
-          <Room
-          currentChat={currentChat}
-          messages={currentMessages}
-          setMessages={setCurrentMessages} />
+          <Room currentChat={currentChat} />
         ) : (
           <div className="welcome_message">
             <h1>Welcome to the Chat App</h1>
