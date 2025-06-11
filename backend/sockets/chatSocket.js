@@ -63,7 +63,6 @@ exports.initializeChatWebSocket = (server) => {
       return;
     }
 
-    // 🛠️ Store all chat IDs as strings
     onlineUsers.get(ws).chats = new Set(
       userChats.chats.map((id) => id.toString())
     );
@@ -249,16 +248,17 @@ exports.initializeChatWebSocket = (server) => {
               }
             }
           });
-        } else if (type === "messageSeen") {
-          const { chatId, messageId } = load;
+        } else if (type === "seenMessage") {
+          const { chatId, messagesId } = load;
 
-          if (!chatId || !messageId) {
+          if (!chatId || !messagesId) {
             logger.logErrorMsg("SOCKET Chat ID or Message ID not provided");
             ws.send(JSON.stringify({ error: "Chat ID or Message ID not provided" }));
             return;
           }
 
           try {
+            // Find the chat and update the seen status of each message from messagesId
             const chat = await Chat.findById(chatId);
             if (!chat) {
               logger.logErrorMsg(`SOCKET Chat not found: ${chatId}`);
@@ -266,45 +266,50 @@ exports.initializeChatWebSocket = (server) => {
               return;
             }
 
-            const message = await Message.findById(messageId);
-            if (!message) {
-              logger.logErrorMsg(`SOCKET Message not found: ${messageId}`);
-              ws.send(JSON.stringify({ error: "Message not found" }));
+            // Ensure messagesId is an array
+            const messagesArray = Array.isArray(messagesId) ? messagesId : [messagesId];
+
+            // Update the seen (false to true) status of each message
+            const updatedMessages = await Message.updateMany(
+              { _id: { $in: messagesArray }, chat: chatId },
+              { $set: { seen: true } }
+            );
+
+            // Ensure at least one message was updated
+            if (updatedMessages.modifiedCount === 0) {
+              logger.logInfoMsg(`SOCKET No messages updated for chat ${chatId}`);
+              ws.send(JSON.stringify({ error: "No messages updated" }));
               return;
             }
 
-            message.seen = true;
-            await message.save();
-
-            logger.logInfoMsg(
-              `SOCKET Message ${messageId} marked as seen in chat ${chatId}`
-            );
-
-            onlineUsers.forEach((userData, ws) => {
+            logger.logInfoMsg(`SOCKET Messages marked as seen for chat ${chatId}`);
+            
+            // Notify all participants in the chat about the seen status
+            onlineUsers.forEach((userData, userWs) => {
+              console.log(`:::: chatId: ${chatId}`);
+              console.log(`:::: userData.chats: ${Array.from(userData.chats)}`);
               if (userData.chats.has(chatId.toString())) {
                 try {
-                  ws.send(
+                  userWs.send(
                     JSON.stringify({
-                      type: "messageSeen",
-                      userId: userData.userId,
+                      type: "seenMessage",
+                      userId: userId,
                       load: {
                         chatId: chatId,
-                        messageId: messageId,
+                        messagesId: messagesArray,
                       }
                     })
                   );
                 } catch (error) {
-                  logger.logErrorMsg(
-                    `SOCKET Failed to send seen update to user ${userData.userId}: ${error.message}`
-                  );
-                }
-              }
-            });
+                  logger.logErrorMsg(`SOCKET Error sending seen status to user ${userData.userId}: ${error.message}`);
+                }}});
+
           }
           catch (error) {
-            logger.logErrorMsg(`SOCKET Error processing messageSeen: ${error.message}`);
-            ws.send(JSON.stringify({ error: "Error processing messageSeen" }));
+            logger.logErrorMsg(`SOCKET Error marking message as seen: ${error.message}`);
+            ws.send(JSON.stringify({ error: "Failed to mark message as seen" }));
           }
+
         }
       } catch (error) {
         logger.logErrorMsg(`SOCKET Error processing message: ${error.message}`);

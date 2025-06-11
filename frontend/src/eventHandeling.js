@@ -88,10 +88,62 @@ exports.handleNewChatCreated = (message, userChats, setUserChats, currentChat, s
     }
 }
 
+/**
+ * This function handles the seen event received.
+ * It updates the userChats state with the seen status for the last message in the chat.
+ * It also updates the messages state with the seen status for the messages in the current chat.
+ * It finds the chat that the seen event belongs to and updates the messages accordingly.
+ * This is used to mark messages as seen when the user has read them.
+ * @param {} message 
+ * @param {*} userChats 
+ * @param {*} setUserChats 
+ * @param {*} messages 
+ * @param {*} setMessages 
+ * @param {*} currentChat 
+ * @param {*} setCurrentChat 
+ */
 exports.handleSeenEventReceived = (message, userChats, setUserChats, messages, setMessages, currentChat, setCurrentChat) => {
     console.log("Seen event received:", message.load);
 
     const { chatId, messagesId } = message.load;
-    
-    
+
+    // Find the chat that the seen event belongs to
+    const chatIndex = userChats.findIndex(
+        (chat) => chat._id === chatId
+    );
+    console.log("Chat index found:", chatIndex);
+
+    // If chat exists, update all the messages that in the messagesId array
+    if (chatIndex !== -1) {
+      console.log("Updating seen status for messages in chat:", userChats[chatIndex]);
+
+      console.log(":::: userChats before update:", userChats);
+      console.log(":::: messagesId to update:", messagesId);
+      // Update the userChats state with the seen status for last message
+      setUserChats((prevChats) => {
+        const updatedChats = [...prevChats];
+        updatedChats[chatIndex] = {
+          ...updatedChats[chatIndex],
+          lastMessage: {
+            ...updatedChats[chatIndex].lastMessage,
+            seen: true, // Update the seen status of the last message
+          },
+        };
+        return updatedChats;
+      });
+      console.log(":::: userChats after update:", userChats);
+
+      console.log(":::: messages before update:", messages);
+      // Update the messages state with the seen status for messages in the current chat
+      setMessages((prevMessages) => {
+        return prevMessages.map((msg) => {
+          if (messagesId.includes(msg._id)) {
+            return { ...msg, seen: true }; // Update the seen status of the message
+          }
+          return msg; // Return the message unchanged if not in messagesId
+        });
+      });
+      console.log(":::: messages after update:", messages);
+
+    }
 }
