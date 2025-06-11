@@ -6,8 +6,6 @@ import { fetchData } from "../fetcher";
 import { useWebSocket } from "../WebSocketContext";
 import { handleNewChatCreated, handleNewMessageReceived } from "../eventHandeling";
 
-// TODO: need that lastMessage field in chat document be populated with the last message in the chat
-
 function AppManager() {
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
   const [username, setUsername] = useState(""); // State to hold user data
