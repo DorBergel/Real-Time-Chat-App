@@ -242,6 +242,62 @@ exports.initializeChatWebSocket = (server) => {
               }
             }
           });
+        } else if (type === "messageSeen") {
+          const { chatId, messageId } = load;
+
+          if (!chatId || !messageId) {
+            logger.logErrorMsg("SOCKET Chat ID or Message ID not provided");
+            ws.send(JSON.stringify({ error: "Chat ID or Message ID not provided" }));
+            return;
+          }
+
+          try {
+            const chat = await Chat.findById(chatId);
+            if (!chat) {
+              logger.logErrorMsg(`SOCKET Chat not found: ${chatId}`);
+              ws.send(JSON.stringify({ error: "Chat not found" }));
+              return;
+            }
+
+            const message = await Message.findById(messageId);
+            if (!message) {
+              logger.logErrorMsg(`SOCKET Message not found: ${messageId}`);
+              ws.send(JSON.stringify({ error: "Message not found" }));
+              return;
+            }
+
+            message.seen = true;
+            await message.save();
+
+            logger.logInfoMsg(
+              `SOCKET Message ${messageId} marked as seen in chat ${chatId}`
+            );
+
+            onlineUsers.forEach((userData, ws) => {
+              if (userData.chats.has(chatId.toString())) {
+                try {
+                  ws.send(
+                    JSON.stringify({
+                      type: "messageSeen",
+                      userId: userData.userId,
+                      load: {
+                        chatId: chatId,
+                        messageId: messageId,
+                      }
+                    })
+                  );
+                } catch (error) {
+                  logger.logErrorMsg(
+                    `SOCKET Failed to send seen update to user ${userData.userId}: ${error.message}`
+                  );
+                }
+              }
+            });
+          }
+          catch (error) {
+            logger.logErrorMsg(`SOCKET Error processing messageSeen: ${error.message}`);
+            ws.send(JSON.stringify({ error: "Error processing messageSeen" }));
+          }
         }
       } catch (error) {
         logger.logErrorMsg(`SOCKET Error processing message: ${error.message}`);
