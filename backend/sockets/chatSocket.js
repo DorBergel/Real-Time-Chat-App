@@ -121,15 +121,28 @@ exports.initializeChatWebSocket = (server) => {
             if (!foundChat) {
               logger.logInfoMsg(`SOCKET Chat not found, creating new chat`);
 
+              // Step 1: Create new chat object (not saving yet)
               const newChat = new Chat({
                 _id: chat._id,
                 participants: chat.participants,
                 title: chat.title,
               });
-              await newChat.save();
+
+              // Step 2: Create and save new message
+              const newMessage = new Message({
+                chat: newChat._id,
+                author: userId,
+                content: message.content,
+              });
+              await newMessage.save();
+
+              // Step 3: Set lastMessage BEFORE saving the chat
+              newChat.lastMessage = newMessage._id;
+              await newChat.save(); // Now chat has lastMessage properly saved
 
               logger.logInfoMsg(`SOCKET New chat created with ID: ${newChat._id}`);
 
+              // Step 4: Update onlineUsers chat tracking
               onlineUsers.forEach((userData) => {
                 if (
                   userData.userId === userId ||
@@ -139,18 +152,7 @@ exports.initializeChatWebSocket = (server) => {
                 }
               });
 
-              const newMessage = new Message({
-                chat: newChat._id,
-                author: userId,
-                content: message.content,
-              });
-              await newMessage.save();
-
-              // Update the lastMessage field in the chat
-              newChat.lastMessage = newMessage._id;
-              await newChat.save();
-
-              // Populate the chat with the lastMessage field
+              // Step 5: Populate chat with lastMessage
               const populatedChat = await Chat.findById(newChat._id).populate({
                 path: "lastMessage",
                 model: Message,
@@ -161,7 +163,7 @@ exports.initializeChatWebSocket = (server) => {
                 },
               });
 
-              // Send the WebSocket message with the populated chat
+              // Step 6: Notify participants via WebSocket
               onlineUsers.forEach((userData, ws) => {
                 if (userData.chats.has(newChat._id.toString())) {
                   ws.send(
@@ -169,7 +171,7 @@ exports.initializeChatWebSocket = (server) => {
                       type: "newMessage",
                       chatId: newChat._id,
                       load: {
-                        message: populatedChat.lastMessage, // Use the populated message
+                        message: populatedChat.lastMessage,
                         chat: populatedChat,
                       },
                     })
@@ -177,7 +179,7 @@ exports.initializeChatWebSocket = (server) => {
                 }
               });
 
-              // Update participants' chats to include the new chat
+              // Step 7: Update user models
               await Promise.all(
                 chat.participants.map(async (participantId) => {
                   const participant = await User.findById(participantId);
@@ -195,15 +197,20 @@ exports.initializeChatWebSocket = (server) => {
             } else {
               logger.logInfoMsg(`SOCKET Chat found with ID: ${foundChat._id}`);
 
+              // Create and save message
               const newMessage = new Message({
                 chat: foundChat._id,
                 author: userId,
                 content: message.content,
               });
               await newMessage.save();
+
+              // Update lastMessage of existing chat
+              foundChat.lastMessage = newMessage._id;
+              await foundChat.save();
+
               logger.logInfoMsg(`SOCKET New message created with ID: ${newMessage._id}`);
 
-              // Populate the new message with author details
               const populatedMessage = await Message.findById(newMessage._id).populate({
                 path: "author",
                 model: User,
@@ -222,7 +229,7 @@ exports.initializeChatWebSocket = (server) => {
                         type: "newMessage",
                         chatId: foundChat._id,
                         load: {
-                          message: populatedMessage, // Use the populated message
+                          message: populatedMessage,
                           chat: foundChat,
                         },
                       })
