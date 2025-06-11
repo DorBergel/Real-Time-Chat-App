@@ -58,6 +58,16 @@ exports.handleNewMessageReceived = (message, userChats, setUserChats, messages, 
         }
 }
 
+/**
+ * This function handles the new chat created event.
+ * It updates the userChats state with the new chat or updates the current chat if it already exists.
+ * It also sets the current chat to the new chat if it doesn't exist.
+ * @param {*} message 
+ * @param {*} userChats 
+ * @param {*} setUserChats 
+ * @param {*} currentChat 
+ * @param {*} setCurrentChat 
+ */
 exports.handleNewChatCreated = (message, userChats, setUserChats, currentChat, setCurrentChat) => {
     console.log("New chat created:", message.load.chat);
 
@@ -76,4 +86,12 @@ exports.handleNewChatCreated = (message, userChats, setUserChats, currentChat, s
         setCurrentChat(message.load.chat);
         console.log("Setting new chat as current chat:", message.load.chat);
     }
+}
+
+exports.handleSeenEventReceived = (message, userChats, setUserChats, messages, setMessages, currentChat, setCurrentChat) => {
+    console.log("Seen event received:", message.load);
+
+    const { chatId, messagesId } = message.load;
+    
+    
 }

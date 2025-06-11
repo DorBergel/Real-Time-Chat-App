@@ -15,34 +15,6 @@ const Room = ({ currentChat, messages= [], setMessages }) => {
     if (chatContainer) {
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
-
-    const unseenMessages = messages.filter(
-      (message) => !message.seen && message.author?._id !== userId
-    );
-
-    if (unseenMessages.length > 0) {
-      console.log("Room - useEffect - Unseen messages found:", unseenMessages);
-      
-      // Mark unseen messages as seen
-      unseenMessages.forEach((message) => {
-        console.log("Room - useEffect - Sending messageSeen:", message);
-        
-        // Update the message state to mark it as seen
-        message.seen = true;
-    
-        // Send messageSeen through WebSocket
-        socket.send(
-            JSON.stringify({
-                type: "messageSeen",
-                userId: userId,
-                load: {
-                    chatId: currentChat._id,
-                    messageId: message._id
-                }}));
-            });
-        
-    }
-
   }, [messages]); // This effect runs whenever messages change
 
   // Effect to fetch messages for the current chat

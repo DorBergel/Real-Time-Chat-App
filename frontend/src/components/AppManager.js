@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Room from "./Room";
 import { fetchData } from "../fetcher";
 import { useWebSocket } from "../WebSocketContext";
-import { handleNewChatCreated, handleNewMessageReceived } from "../eventHandeling";
+import { handleNewChatCreated, handleNewMessageReceived, handleSeenEventReceived } from "../eventHandeling";
 
 function AppManager() {
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
@@ -38,6 +38,16 @@ function AppManager() {
           currentChat,
           setCurrentChat
         );
+      } else if (message.type === "seenMessage") {
+        handleSeenEventReceived(
+          message,
+          userChats,
+          setUserChats,
+          currentMessages,
+          setCurrentMessages,
+          currentChat,
+          setCurrentChat
+        );
       }
 
     };
@@ -45,8 +55,6 @@ function AppManager() {
     return () => unregisterListener(handleWebSocketMessage);
   }, [registerListener, unregisterListener, userChats]);
   
-  // Register WebSocket listener
-
   // Effect to fetch user data from backend
   useEffect(() => {
     fetchData(`${process.env.REACT_APP_API_URL}/api/user/user/${userId}`)
