@@ -151,7 +151,7 @@ const Sidebar = ({
       <div className="sidebar_header">
         <div className="logo">
           {/* Logo can be an image or text */}
-          <h2>{username ? username : "ERROR"}</h2>
+          <h2 onClick={() => setCurrentChat(null)}>{username ? username : "ERROR"}</h2>
         </div>
         <div className="sidebar_buttons">
           <ButtonGroup className="sidebar_button_group">
