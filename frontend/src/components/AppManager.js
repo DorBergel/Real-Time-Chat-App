@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Room from "./Room";
 import { fetchData } from "../fetcher";
 import { useWebSocket } from "../WebSocketContext";
-import { handleNewChatCreated, handleNewMessageReceived, handleSeenEventReceived } from "../eventHandeling";
+import { handleNewChatCreated, handleNewMessageReceived, handleSeenEventReceived, handleTypingEventReceived } from "../eventHandeling";
 
 function AppManager() {
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
@@ -40,6 +40,16 @@ function AppManager() {
         );
       } else if (message.type === "seenMessage") {
         handleSeenEventReceived(
+          message,
+          userChats,
+          setUserChats,
+          currentMessages,
+          setCurrentMessages,
+          currentChat,
+          setCurrentChat
+        );
+      } else if (message.type === "isTyping") {
+        handleTypingEventReceived(
           message,
           userChats,
           setUserChats,

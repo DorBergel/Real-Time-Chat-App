@@ -66,6 +66,13 @@ const Room = ({ currentChat, messages= [], setMessages }) => {
     }
   }, [currentChat]); // Effect runs when currentChat changes
 
+  // when currentChat changes, we want to update the isTyping state
+  useEffect(() => {
+    if (currentChat) {
+      setIsTyping(currentChat?.isTyping || false);      
+    }
+  }, [currentChat, messages]);
+
   const handleSubmit = (event) => {
     event.preventDefault();
     const input = document.querySelector(".room_input input");
@@ -90,6 +97,21 @@ const Room = ({ currentChat, messages= [], setMessages }) => {
       console.log("Room - handleSubmit - Sending message:", message);
       socket.send(JSON.stringify(message)); // Send the message
       input.value = ""; // Clear the input field
+    }
+  };
+
+  // Sending typing status
+  const handleTyping = () => {
+    if (socket) {
+      console.log("Room - handleTyping - User is typing...");
+      const typingEvent = {
+        type: "isTyping",
+        userId: userId,
+        load: {
+          chatId: currentChat._id,
+        },
+      };
+      socket.send(JSON.stringify(typingEvent)); // Send typing event
     }
   };
 
@@ -128,7 +150,7 @@ const Room = ({ currentChat, messages= [], setMessages }) => {
         )}
       </div>
       <div className="room_input">
-        <input type="text" placeholder="Type a message..." />
+        <input type="text" placeholder="Type a message..." onChange={handleTyping}/>
         <button onClick={handleSubmit}>Send</button>
       </div>
     </div>

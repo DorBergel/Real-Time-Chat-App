@@ -138,6 +138,7 @@ const Sidebar = ({
     console.log("Sidebar - DEBUG - Chats:", chats);
   }, [username, chats]);
 
+
   // sort chats by last message time
   const sortedChats = [...chats].sort((a, b) => {
     const aTime = new Date(a.lastMessage?.createdAt || 0);
@@ -184,8 +185,6 @@ const Sidebar = ({
         <div className="items_list">
           {chats.length > 0 ? (
             sortedChats.map((chat) => (
-              
-              console.log("Sidebar - Rendering chat item:", chat),
               <div
                 key={chat._id} // Use unique identifier
                 className={`chat_item ${
@@ -193,7 +192,10 @@ const Sidebar = ({
                 }`}
                 onClick={() => handleChatItemClick(chat._id)} // Pass type
               >
-                <h3>{chat.title || "Untitled Chat"}</h3>
+                <h3>
+                  {chat.title || "Untitled Chat"}{" "}
+                  {chat.isTyping && <span className="typing-indicator">Typing...</span>}
+                </h3>
                 <p>{chat.lastMessage?.content || "No messages yet"}</p>
                 <hr />
                 <div className="chat_item_status">

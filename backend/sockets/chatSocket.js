@@ -310,6 +310,31 @@ exports.initializeChatWebSocket = (server) => {
             ws.send(JSON.stringify({ error: "Failed to mark message as seen" }));
           }
 
+        } else if (type === "isTyping") {
+          const { chatId } = load;
+
+          if (!chatId) {
+            logger.logErrorMsg("SOCKET Chat ID not provided for typing notification");
+            ws.send(JSON.stringify({ error: "Chat ID not provided" }));
+            return;
+          }
+
+          logger.logInfoMsg(`SOCKET User ${userId} is typing in chat ${chatId}`);
+          onlineUsers.forEach((userData, userWs) => {
+            if (userData.chats.has(chatId.toString())) {
+              try {
+                userWs.send(
+                  JSON.stringify({
+                    type: "isTyping",
+                    userId: userId,
+                    load: { chatId: chatId },
+                  })
+                );
+              } catch (error) {
+                logger.logErrorMsg(`SOCKET Error sending typing notification to user ${userData.userId}: ${error.message}`);
+              }
+            }
+          });
         }
       } catch (error) {
         logger.logErrorMsg(`SOCKET Error processing message: ${error.message}`);
