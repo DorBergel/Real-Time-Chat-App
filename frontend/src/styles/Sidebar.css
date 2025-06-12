@@ -62,3 +62,9 @@
     background-color: #d4edda; /* Light green background for seen messages */
     border-left: 5px solid #28a745; /* Green border */
 }
+
+.typing-indicator {
+  font-size: 0.8em;
+  color: #888;
+  margin-left: 5px;
+}

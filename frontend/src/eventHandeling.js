@@ -1,4 +1,3 @@
-
 /**
  * This function handles the new message received event.
  * It updates the userChats state with the new message or adds a new chat if it doesn't exist.
@@ -147,3 +146,58 @@ exports.handleSeenEventReceived = (message, userChats, setUserChats, messages, s
 
     }
 }
+
+
+exports.handleTypingEventReceived = (message, userChats, setUserChats, messages, setMessages, currentChat, setCurrentChat) => {
+    console.log("Typing event received:", message.load);
+
+    const { chatId } = message.load;
+
+    const relevantChat = userChats.find(chat => chat._id === chatId);
+    if (relevantChat && message.userId !== localStorage.getItem("user-id")) {
+        console.log("Setting typing status for chat:", relevantChat.title);
+
+        // Update typing status for the relevant chat
+        setUserChats((prevChats) => {
+            return prevChats.map(chat => {
+                if (chat._id === chatId) {
+                    return { ...chat, isTyping: true }; // Set typing status
+                }
+                return chat; // Return other chats unchanged
+            });
+        });
+
+        // Update typing status for the current chat
+        setCurrentChat((prevChat) => {
+            if (prevChat && prevChat._id === chatId) {
+                return { ...prevChat, isTyping: true }; // Set typing status
+            }
+            return prevChat; // Return current chat unchanged
+        });
+
+        // Reset typing status after a delay using debounce
+        const resetTypingStatus = () => {
+            setUserChats((prevChats) => {
+                return prevChats.map(chat => {
+                    if (chat._id === chatId) {
+                        return { ...chat, isTyping: false }; // Reset typing status
+                    }
+                    return chat; // Return other chats unchanged
+                });
+            });
+
+            setCurrentChat((prevChat) => {
+                if (prevChat && prevChat._id === chatId) {
+                    return { ...prevChat, isTyping: false }; // Reset typing status
+                }
+                return prevChat; // Return current chat unchanged
+            });
+        };
+
+        // Use a debounce mechanism to reset typing status
+        clearTimeout(relevantChat.typingTimeout);
+        relevantChat.typingTimeout = setTimeout(resetTypingStatus, 3000); // Timeout duration set to 3 seconds
+    } else {
+        console.warn("Typing event received for an unknown chat or self:", message.load);
+    }
+};
