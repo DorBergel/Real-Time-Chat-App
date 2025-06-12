@@ -20,27 +20,19 @@ const Room = ({ currentChat, messages= [], setMessages }) => {
       (message) => !message.seen && message.author?._id !== userId
     );
 
-    if (unseenMessages.length > 0) {
-      console.log("Room - useEffect - Unseen messages found:", unseenMessages);
-      
-      // Mark unseen messages as seen
-      unseenMessages.forEach((message) => {
-        console.log("Room - useEffect - Sending messageSeen:", message);
-        
-        // Update the message state to mark it as seen
-        message.seen = true;
-    
-        // Send messageSeen through WebSocket
-        socket.send(
-            JSON.stringify({
-                type: "messageSeen",
-                userId: userId,
-                load: {
-                    chatId: currentChat._id,
-                    messageId: message._id
-                }}));
-            });
-        
+    console.log("Room - useEffect - Unseen messages:", unseenMessages);
+
+    if (unseenMessages.length > 0 && socket) {
+      console.log("Room - useEffect - Sending seen event for unseen messages");
+      const seenEvent = {
+        type: "seenMessage",
+        userId: userId,
+        load: {
+          chatId: currentChat._id,
+          messagesId: unseenMessages.map((msg) => msg._id),
+        },
+      };
+      socket.send(JSON.stringify(seenEvent)); // Send the seen event
     }
 
   }, [messages]); // This effect runs whenever messages change

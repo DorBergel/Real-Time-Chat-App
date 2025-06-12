@@ -57,7 +57,7 @@ const Sidebar = ({
         // Create a new temporary chat object
         const newChat = {
           _id: `temp-${contactId}`, // Temporary ID for the new chat
-          title: selectedContact.username || "New Chat",
+          title: `${selectedContact.username} & ${username}` || "New Chat",
           participants: [userId, selectedContact._id],
         };
 
@@ -184,6 +184,8 @@ const Sidebar = ({
         <div className="items_list">
           {chats.length > 0 ? (
             sortedChats.map((chat) => (
+              
+              console.log("Sidebar - Rendering chat item:", chat),
               <div
                 key={chat._id} // Use unique identifier
                 className={`chat_item ${
@@ -208,7 +210,11 @@ const Sidebar = ({
                       : "N/A"}
                   </span>
                   <span className="chat_item_status_seen">
-                    {chat.lastMessage?.seen ? "Seen" : "Not Seen"}
+                    {chat.lastMessage?.author?._id === userId || chat.lastMessage?.author === userId
+                      ? chat.lastMessage.seen
+                        ? "Seen"
+                        : "Not Seen"
+                      : ""}
                   </span>
                 </div>
               </div>

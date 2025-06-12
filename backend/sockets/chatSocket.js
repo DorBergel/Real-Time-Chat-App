@@ -63,7 +63,6 @@ exports.initializeChatWebSocket = (server) => {
       return;
     }
 
-    // 🛠️ Store all chat IDs as strings
     onlineUsers.get(ws).chats = new Set(
       userChats.chats.map((id) => id.toString())
     );
@@ -121,15 +120,28 @@ exports.initializeChatWebSocket = (server) => {
             if (!foundChat) {
               logger.logInfoMsg(`SOCKET Chat not found, creating new chat`);
 
+              // Step 1: Create new chat object (not saving yet)
               const newChat = new Chat({
                 _id: chat._id,
                 participants: chat.participants,
                 title: chat.title,
               });
-              await newChat.save();
+
+              // Step 2: Create and save new message
+              const newMessage = new Message({
+                chat: newChat._id,
+                author: userId,
+                content: message.content,
+              });
+              await newMessage.save();
+
+              // Step 3: Set lastMessage BEFORE saving the chat
+              newChat.lastMessage = newMessage._id;
+              await newChat.save(); // Now chat has lastMessage properly saved
 
               logger.logInfoMsg(`SOCKET New chat created with ID: ${newChat._id}`);
 
+              // Step 4: Update onlineUsers chat tracking
               onlineUsers.forEach((userData) => {
                 if (
                   userData.userId === userId ||
@@ -139,18 +151,7 @@ exports.initializeChatWebSocket = (server) => {
                 }
               });
 
-              const newMessage = new Message({
-                chat: newChat._id,
-                author: userId,
-                content: message.content,
-              });
-              await newMessage.save();
-
-              // Update the lastMessage field in the chat
-              newChat.lastMessage = newMessage._id;
-              await newChat.save();
-
-              // Populate the chat with the lastMessage field
+              // Step 5: Populate chat with lastMessage
               const populatedChat = await Chat.findById(newChat._id).populate({
                 path: "lastMessage",
                 model: Message,
@@ -161,7 +162,7 @@ exports.initializeChatWebSocket = (server) => {
                 },
               });
 
-              // Send the WebSocket message with the populated chat
+              // Step 6: Notify participants via WebSocket
               onlineUsers.forEach((userData, ws) => {
                 if (userData.chats.has(newChat._id.toString())) {
                   ws.send(
@@ -169,7 +170,7 @@ exports.initializeChatWebSocket = (server) => {
                       type: "newMessage",
                       chatId: newChat._id,
                       load: {
-                        message: populatedChat.lastMessage, // Use the populated message
+                        message: populatedChat.lastMessage,
                         chat: populatedChat,
                       },
                     })
@@ -177,7 +178,7 @@ exports.initializeChatWebSocket = (server) => {
                 }
               });
 
-              // Update participants' chats to include the new chat
+              // Step 7: Update user models
               await Promise.all(
                 chat.participants.map(async (participantId) => {
                   const participant = await User.findById(participantId);
@@ -195,15 +196,20 @@ exports.initializeChatWebSocket = (server) => {
             } else {
               logger.logInfoMsg(`SOCKET Chat found with ID: ${foundChat._id}`);
 
+              // Create and save message
               const newMessage = new Message({
                 chat: foundChat._id,
                 author: userId,
                 content: message.content,
               });
               await newMessage.save();
+
+              // Update lastMessage of existing chat
+              foundChat.lastMessage = newMessage._id;
+              await foundChat.save();
+
               logger.logInfoMsg(`SOCKET New message created with ID: ${newMessage._id}`);
 
-              // Populate the new message with author details
               const populatedMessage = await Message.findById(newMessage._id).populate({
                 path: "author",
                 model: User,
@@ -222,7 +228,7 @@ exports.initializeChatWebSocket = (server) => {
                         type: "newMessage",
                         chatId: foundChat._id,
                         load: {
-                          message: populatedMessage, // Use the populated message
+                          message: populatedMessage,
                           chat: foundChat,
                         },
                       })
@@ -242,16 +248,17 @@ exports.initializeChatWebSocket = (server) => {
               }
             }
           });
-        } else if (type === "messageSeen") {
-          const { chatId, messageId } = load;
+        } else if (type === "seenMessage") {
+          const { chatId, messagesId } = load;
 
-          if (!chatId || !messageId) {
+          if (!chatId || !messagesId) {
             logger.logErrorMsg("SOCKET Chat ID or Message ID not provided");
             ws.send(JSON.stringify({ error: "Chat ID or Message ID not provided" }));
             return;
           }
 
           try {
+            // Find the chat and update the seen status of each message from messagesId
             const chat = await Chat.findById(chatId);
             if (!chat) {
               logger.logErrorMsg(`SOCKET Chat not found: ${chatId}`);
@@ -259,45 +266,50 @@ exports.initializeChatWebSocket = (server) => {
               return;
             }
 
-            const message = await Message.findById(messageId);
-            if (!message) {
-              logger.logErrorMsg(`SOCKET Message not found: ${messageId}`);
-              ws.send(JSON.stringify({ error: "Message not found" }));
+            // Ensure messagesId is an array
+            const messagesArray = Array.isArray(messagesId) ? messagesId : [messagesId];
+
+            // Update the seen (false to true) status of each message
+            const updatedMessages = await Message.updateMany(
+              { _id: { $in: messagesArray }, chat: chatId },
+              { $set: { seen: true } }
+            );
+
+            // Ensure at least one message was updated
+            if (updatedMessages.modifiedCount === 0) {
+              logger.logInfoMsg(`SOCKET No messages updated for chat ${chatId}`);
+              ws.send(JSON.stringify({ error: "No messages updated" }));
               return;
             }
 
-            message.seen = true;
-            await message.save();
-
-            logger.logInfoMsg(
-              `SOCKET Message ${messageId} marked as seen in chat ${chatId}`
-            );
-
-            onlineUsers.forEach((userData, ws) => {
+            logger.logInfoMsg(`SOCKET Messages marked as seen for chat ${chatId}`);
+            
+            // Notify all participants in the chat about the seen status
+            onlineUsers.forEach((userData, userWs) => {
+              console.log(`:::: chatId: ${chatId}`);
+              console.log(`:::: userData.chats: ${Array.from(userData.chats)}`);
               if (userData.chats.has(chatId.toString())) {
                 try {
-                  ws.send(
+                  userWs.send(
                     JSON.stringify({
-                      type: "messageSeen",
-                      userId: userData.userId,
+                      type: "seenMessage",
+                      userId: userId,
                       load: {
                         chatId: chatId,
-                        messageId: messageId,
+                        messagesId: messagesArray,
                       }
                     })
                   );
                 } catch (error) {
-                  logger.logErrorMsg(
-                    `SOCKET Failed to send seen update to user ${userData.userId}: ${error.message}`
-                  );
-                }
-              }
-            });
+                  logger.logErrorMsg(`SOCKET Error sending seen status to user ${userData.userId}: ${error.message}`);
+                }}});
+
           }
           catch (error) {
-            logger.logErrorMsg(`SOCKET Error processing messageSeen: ${error.message}`);
-            ws.send(JSON.stringify({ error: "Error processing messageSeen" }));
+            logger.logErrorMsg(`SOCKET Error marking message as seen: ${error.message}`);
+            ws.send(JSON.stringify({ error: "Failed to mark message as seen" }));
           }
+
         }
       } catch (error) {
         logger.logErrorMsg(`SOCKET Error processing message: ${error.message}`);
