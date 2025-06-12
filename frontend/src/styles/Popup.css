@@ -1,0 +1,35 @@
+.popup {
+  position: absolute; 
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  width: 35% !important; /* Fixed width */
+  height: 40% !important; /* Fixed height */
+  display: flex;
+  flex-direction: column; /* Arrange content vertically */
+  padding: 20px;
+}
+
+.popup_content {
+  flex: 1; /* Take up remaining space */
+  overflow-y: auto; /* Allow scrolling if content overflows */
+  padding: 20px;
+}
+
+.close_popup_button {
+  position: absolute; /* Position the button relative to the popup */
+  bottom: 10px; /* Stick 10px from the bottom border */
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Adjust for centering */
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+}

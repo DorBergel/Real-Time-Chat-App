@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/Sidebar.css";
-import { useState, useEffect } from "react";
 import { useWebSocket } from "../WebSocketContext"; // Use the hook, not the provider
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import ToggleButton from "react-bootstrap/ToggleButton";
 import { fetchData } from "../fetcher";
+import GroupCreationForm from "./GroupCreationForm"; 
+import Popup from "./Popup"; // Import the Popup component
 
 const Sidebar = ({
   username,
@@ -18,6 +19,7 @@ const Sidebar = ({
   const { socket, registerListener, unregisterListener } = useWebSocket(); // Use the hook to access the context
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
   const [listState, setListState] = useState("Chats");
+  const [showGroupCreationForm, setShowGroupCreationForm] = useState(false); // State to toggle the form visibility
 
   const handleChatItemClick = (chatId) => {
     console.log("Sidebar - handleChatItemClick - Chat ID:", chatId);
@@ -146,6 +148,15 @@ const Sidebar = ({
     return bTime - aTime; // Sort in descending order
   });
 
+  const handleCreateGroupClick = () => {
+    console.log("Create Group button clicked");
+    setShowGroupCreationForm(true); // Show the group creation form
+  };
+
+  const handleCloseGroupCreationForm = () => {
+    setShowGroupCreationForm(false); // Hide the group creation form
+  };
+
   return (
     <div className="sidebar">
       <div className="sidebar_header">
@@ -260,6 +271,30 @@ const Sidebar = ({
             <p>No contacts available</p>
           )}
         </div>
+      )}
+
+      <div className="sidebar_footer">
+        <button
+          className="create_group_button"
+          onClick={handleCreateGroupClick}
+        >
+          Create Group
+        </button>
+      </div>
+
+      {/* Use Popup component for GroupCreationForm */}
+      {showGroupCreationForm && (
+        <Popup onClose={handleCloseGroupCreationForm}>
+          <GroupCreationForm
+            username={username}
+            chats={chats}
+            contacts={contacts}
+            setContacts={setContacts}
+            currentChat={currentChat}
+            setCurrentChat={setCurrentChat}
+            setChats={setChats}
+          />
+        </Popup>
       )}
     </div>
   );
