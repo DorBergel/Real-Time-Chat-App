@@ -4,12 +4,10 @@ import "../styles/Popup.css";
 const Popup = ({ children, onClose }) => {
   return (
     <div className="popup">
-      <div className="popup_content">
-        {children}
-        <button className="close_popup_button" onClick={onClose}>
-          Close
-        </button>
-      </div>
+      <button className="popup_close" onClick={onClose}>
+        &times; {/* Unicode for the "x" symbol */}
+      </button>
+      <div className="popup_content">{children}</div>
     </div>
   );
 };

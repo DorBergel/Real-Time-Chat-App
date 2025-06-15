@@ -4,7 +4,7 @@ import { useWebSocket } from "../WebSocketContext"; // Use the hook, not the pro
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import ToggleButton from "react-bootstrap/ToggleButton";
 import { fetchData } from "../fetcher";
-import GroupCreationForm from "./GroupCreationForm"; 
+import GroupCreationForm from "./GroupCreationForm";
 import Popup from "./Popup"; // Import the Popup component
 
 const Sidebar = ({
@@ -23,7 +23,7 @@ const Sidebar = ({
 
   const handleChatItemClick = (chatId) => {
     console.log("Sidebar - handleChatItemClick - Chat ID:", chatId);
-    
+
     // Find the chat with the given ID
     const selectedChat = chats.find((chat) => chat._id === chatId);
     if (selectedChat) {
@@ -140,7 +140,6 @@ const Sidebar = ({
     console.log("Sidebar - DEBUG - Chats:", chats);
   }, [username, chats]);
 
-
   // sort chats by last message time
   const sortedChats = [...chats].sort((a, b) => {
     const aTime = new Date(a.lastMessage?.createdAt || 0);
@@ -162,7 +161,9 @@ const Sidebar = ({
       <div className="sidebar_header">
         <div className="logo">
           {/* Logo can be an image or text */}
-          <h2 onClick={() => setCurrentChat(null)}>{username ? username : "ERROR"}</h2>
+          <h2 onClick={() => setCurrentChat(null)}>
+            {username ? username : "ERROR"}
+          </h2>
         </div>
         <div className="sidebar_buttons">
           <ButtonGroup className="sidebar_button_group">
@@ -205,7 +206,9 @@ const Sidebar = ({
               >
                 <h3>
                   {chat.title || "Untitled Chat"}{" "}
-                  {chat.isTyping && <span className="typing-indicator">Typing...</span>}
+                  {chat.isTyping && (
+                    <span className="typing-indicator">Typing...</span>
+                  )}
                 </h3>
                 <p>{chat.lastMessage?.content || "No messages yet"}</p>
                 <hr />
@@ -223,7 +226,8 @@ const Sidebar = ({
                       : "N/A"}
                   </span>
                   <span className="chat_item_status_seen">
-                    {chat.lastMessage?.author?._id === userId || chat.lastMessage?.author === userId
+                    {chat.lastMessage?.author?._id === userId ||
+                    chat.lastMessage?.author === userId
                       ? chat.lastMessage.seen
                         ? "Seen"
                         : "Not Seen"
@@ -293,6 +297,7 @@ const Sidebar = ({
             currentChat={currentChat}
             setCurrentChat={setCurrentChat}
             setChats={setChats}
+            socket={socket}
           />
         </Popup>
       )}

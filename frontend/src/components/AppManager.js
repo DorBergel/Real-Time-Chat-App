@@ -4,7 +4,13 @@ import { useState, useEffect } from "react";
 import Room from "./Room";
 import { fetchData } from "../fetcher";
 import { useWebSocket } from "../WebSocketContext";
-import { handleNewChatCreated, handleNewMessageReceived, handleSeenEventReceived, handleTypingEventReceived } from "../eventHandeling";
+import {
+  handleNewChatCreated,
+  handleNewGroupChatCreated,
+  handleNewMessageReceived,
+  handleSeenEventReceived,
+  handleTypingEventReceived,
+} from "../eventHandeling";
 
 function AppManager() {
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
@@ -29,8 +35,7 @@ function AppManager() {
           setCurrentMessages,
           currentChat
         );
-      }
-      else if (message.type === "chatCreated") {
+      } else if (message.type === "chatCreated") {
         handleNewChatCreated(
           message,
           userChats,
@@ -58,13 +63,20 @@ function AppManager() {
           currentChat,
           setCurrentChat
         );
+      } else if (message.type === "newGroup") {
+        handleNewGroupChatCreated(
+          message,
+          userChats,
+          setUserChats,
+          currentChat,
+          setCurrentChat
+        );
       }
-
     };
     registerListener(handleWebSocketMessage);
     return () => unregisterListener(handleWebSocketMessage);
   }, [registerListener, unregisterListener, userChats]);
-  
+
   // Effect to fetch user data from backend
   useEffect(() => {
     fetchData(`${process.env.REACT_APP_API_URL}/api/user/user/${userId}`)
@@ -75,7 +87,10 @@ function AppManager() {
         return response.json();
       })
       .then((data) => {
-        console.log("AppManager - useEffect - User data fetched successfully:", data);
+        console.log(
+          "AppManager - useEffect - User data fetched successfully:",
+          data
+        );
         setUsername(data.user.username);
         setUserContacts(data.user.contacts || []);
         setUserChats(data.user.chats || []);
@@ -83,8 +98,7 @@ function AppManager() {
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
       });
-  }
-  , [userId]);
+  }, [userId]);
 
   return (
     <div className="AppManager">
@@ -101,9 +115,10 @@ function AppManager() {
       <div className="chat_container">
         {currentChat ? (
           <Room
-          currentChat={currentChat}
-          messages={currentMessages}
-          setMessages={setCurrentMessages} />
+            currentChat={currentChat}
+            messages={currentMessages}
+            setMessages={setCurrentMessages}
+          />
         ) : (
           <div className="welcome_message">
             <h1>Welcome to the Chat App</h1>
