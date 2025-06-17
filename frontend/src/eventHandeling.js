@@ -24,40 +24,36 @@ exports.handleNewMessageReceived = (
     (chat) => chat._id === message.load.chat._id
   );
   console.log("Chat index found:", chatIndex);
+
   if (chatIndex !== -1) {
-    // If chat exists, update the last message
-    console.log(
-      "Updating last message for existing chat:",
-      userChats[chatIndex]
-    );
+    // Update the last message for the chat
     setUserChats((prevChats) => {
       const updatedChats = [...prevChats];
       updatedChats[chatIndex] = {
         ...updatedChats[chatIndex],
-        lastMessage: message.load.message, // Update the last message
+        lastMessage: message.load.message,
       };
       return updatedChats;
     });
-    // Add the new message to the messages state
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      message.load.message, // Add the new message to the messages state
-    ]);
+
+    // Add the new message to the messages state only if it belongs to the current chat
+    if (currentChat && currentChat._id === message.load.chat._id) {
+      setMessages((prevMessages) => [...prevMessages, message.load.message]);
+    }
   } else {
     // If chat does not exist, add it only if it's a valid chat object
     if (message.load.chat && message.load.chat._id) {
-      console.log("Adding new chat to userChats:", message.load.chat);
       setUserChats((prevChats) => {
         const uniqueChats = prevChats.filter(
           (chat) => chat._id !== message.load.chat._id
         );
         return [...uniqueChats, message.load.chat];
       });
-      // TODO: Understand why the message is not shown in the chat Room
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        message.load.message, // Add the new message to the messages state
-      ]);
+
+      // Add the new message to the messages state only if it belongs to the current chat
+      if (currentChat && currentChat._id === message.load.chat._id) {
+        setMessages((prevMessages) => [...prevMessages, message.load.message]);
+      }
     } else {
       console.warn("Invalid chat object received:", message.load.chat);
     }
@@ -129,44 +125,55 @@ exports.handleSeenEventReceived = (
   console.log("Seen event received:", message.load);
 
   const { chatId, messagesId } = message.load;
+  const userId = message.userId; // Extract the userId from the message
 
   // Find the chat that the seen event belongs to
   const chatIndex = userChats.findIndex((chat) => chat._id === chatId);
   console.log("Chat index found:", chatIndex);
 
-  // If chat exists, update all the messages that in the messagesId array
+  // If chat exists, update the seenBy array for the relevant messages
   if (chatIndex !== -1) {
     console.log(
-      "Updating seen status for messages in chat:",
+      "Updating seenBy status for messages in chat:",
       userChats[chatIndex]
     );
 
     console.log(":::: userChats before update:", userChats);
     console.log(":::: messagesId to update:", messagesId);
-    // Update the userChats state with the seen status for last message
+
+    // Update the userChats seenBy state array for the last message
     setUserChats((prevChats) => {
-      const updatedChats = [...prevChats];
-      updatedChats[chatIndex] = {
-        ...updatedChats[chatIndex],
-        lastMessage: {
-          ...updatedChats[chatIndex].lastMessage,
-          seen: true, // Update the seen status of the last message
-        },
-      };
-      return updatedChats;
+      return prevChats.map((chat) => {
+        if (chat._id === chatId) {
+          return {
+            ...chat,
+            lastMessage: {
+              ...chat.lastMessage,
+              seenBy: [...(chat.lastMessage.seenBy || []), userId], // Add the userId to the seenBy array
+            },
+          };
+        }
+        return chat; // Return the chat unchanged if not the relevant chat
+      });
     });
+
     console.log(":::: userChats after update:", userChats);
 
     console.log(":::: messages before update:", messages);
-    // Update the messages state with the seen status for messages in the current chat
+
+    // Update the messages seenBy state array for the relevant messages
     setMessages((prevMessages) => {
       return prevMessages.map((msg) => {
         if (messagesId.includes(msg._id)) {
-          return { ...msg, seen: true }; // Update the seen status of the message
+          return {
+            ...msg,
+            seenBy: [...(msg.seenBy || []), userId], // Add the userId to the seenBy array
+          };
         }
-        return msg; // Return the message unchanged if not in messagesId
+        return msg; // Return the message unchanged if not relevant
       });
     });
+
     console.log(":::: messages after update:", messages);
   }
 };

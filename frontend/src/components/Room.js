@@ -3,21 +3,25 @@ import "../styles/Room.css";
 import { fetchData } from "../fetcher";
 import { useWebSocket } from "../WebSocketContext";
 
-const Room = ({ currentChat, messages= [], setMessages }) => {
+const Room = ({ currentChat, messages = [], setMessages }) => {
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
   const [isTyping, setIsTyping] = useState(false);
   const { socket, registerListener, unregisterListener } = useWebSocket();
 
   // Effect to scroll to the bottom of the chat
   useEffect(() => {
-    console.log("Room - useEffect - Scrolling to bottom of chat messages - currentChat:", currentChat);
+    console.log(
+      "Room - useEffect - Scrolling to bottom of chat messages - currentChat:",
+      currentChat
+    );
     const chatContainer = document.querySelector(".room_messages");
     if (chatContainer) {
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
     const unseenMessages = messages.filter(
-      (message) => !message.seen && message.author?._id !== userId
+      (message) =>
+        !message.seenBy?.includes(userId) && message.author?._id !== userId
     );
 
     console.log("Room - useEffect - Unseen messages:", unseenMessages);
@@ -34,12 +38,14 @@ const Room = ({ currentChat, messages= [], setMessages }) => {
       };
       socket.send(JSON.stringify(seenEvent)); // Send the seen event
     }
-
   }, [messages]); // This effect runs whenever messages change
 
   // Effect to fetch messages for the current chat
   useEffect(() => {
-    console.log("Room - useEffect - Fetching messages for current chat:", currentChat);
+    console.log(
+      "Room - useEffect - Fetching messages for current chat:",
+      currentChat
+    );
     if (currentChat && !currentChat._id.toString().includes("temp-")) {
       fetchData(
         `${process.env.REACT_APP_API_URL}/api/message/${currentChat._id}`
@@ -61,7 +67,9 @@ const Room = ({ currentChat, messages= [], setMessages }) => {
           console.error("There was a problem with the fetch operation:", error);
         });
     } else {
-      console.warn("Room - useEffect - No valid current chat to fetch messages for.");
+      console.warn(
+        "Room - useEffect - No valid current chat to fetch messages for."
+      );
       setMessages([]); // Clear messages if no valid chat
     }
   }, [currentChat]); // Effect runs when currentChat changes
@@ -69,7 +77,7 @@ const Room = ({ currentChat, messages= [], setMessages }) => {
   // when currentChat changes, we want to update the isTyping state
   useEffect(() => {
     if (currentChat) {
-      setIsTyping(currentChat?.isTyping || false);      
+      setIsTyping(currentChat?.isTyping || false);
     }
   }, [currentChat, messages]);
 
@@ -134,7 +142,16 @@ const Room = ({ currentChat, messages= [], setMessages }) => {
             </p>
             {message.author?._id === userId ? (
               <span className="seen-status">
-                {message.seen ? "Seen" : "Not Seen"}
+                {currentChat.isGroup
+                  ? message.seenBy?.length ===
+                    currentChat.participants.length - 1
+                    ? "Seen by all"
+                    : `Seen by ${message.seenBy?.length} out of ${
+                        currentChat.participants.length - 1
+                      }`
+                  : message.seenBy?.some((seenUserId) => seenUserId !== userId)
+                  ? "Seen"
+                  : "Not Seen"}
               </span>
             ) : null}
           </div>
@@ -150,7 +167,11 @@ const Room = ({ currentChat, messages= [], setMessages }) => {
         )}
       </div>
       <div className="room_input">
-        <input type="text" placeholder="Type a message..." onChange={handleTyping}/>
+        <input
+          type="text"
+          placeholder="Type a message..."
+          onChange={handleTyping}
+        />
         <button onClick={handleSubmit}>Send</button>
       </div>
     </div>

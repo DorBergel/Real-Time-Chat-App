@@ -259,76 +259,67 @@ exports.initializeChatWebSocket = (server) => {
         } else if (type === "seenMessage") {
           const { chatId, messagesId } = load;
 
-          if (!chatId || !messagesId) {
-            logger.logErrorMsg("SOCKET Chat ID or Message ID not provided");
+          if (
+            !chatId ||
+            !Array.isArray(messagesId) ||
+            messagesId.length === 0
+          ) {
+            logger.logErrorMsg(
+              "SOCKET Chat ID or Message ID not provided or invalid"
+            );
             ws.send(
-              JSON.stringify({ error: "Chat ID or Message ID not provided" })
+              JSON.stringify({
+                error: "Chat ID or Message ID not provided or invalid",
+              })
             );
             return;
           }
 
           try {
-            // Find the chat and update the seen status of each message from messagesId
-            const chat = await Chat.findById(chatId);
-            if (!chat) {
-              logger.logErrorMsg(`SOCKET Chat not found: ${chatId}`);
-              ws.send(JSON.stringify({ error: "Chat not found" }));
-              return;
-            }
-
-            // Ensure messagesId is an array
-            const messagesArray = Array.isArray(messagesId)
-              ? messagesId
-              : [messagesId];
-
-            // Update the seen (false to true) status of each message
-            const updatedMessages = await Message.updateMany(
-              { _id: { $in: messagesArray }, chat: chatId },
-              { $set: { seen: true } }
+            // Find the relevant messages and update seenBy array
+            const messages = await Message.updateMany(
+              { _id: { $in: messagesId }, chat: chatId },
+              { $addToSet: { seenBy: userId } }
             );
 
-            // Ensure at least one message was updated
-            if (updatedMessages.modifiedCount === 0) {
+            // Check if any messages were updated
+            if (messages.modifiedCount > 0) {
               logger.logInfoMsg(
-                `SOCKET No messages updated for chat ${chatId}`
+                `SOCKET User ${userId} marked messages as seen in chat ${chatId}`
               );
-              ws.send(JSON.stringify({ error: "No messages updated" }));
-              return;
-            }
 
-            logger.logInfoMsg(
-              `SOCKET Messages marked as seen for chat ${chatId}`
-            );
-
-            // Notify all participants in the chat about the seen status
-            onlineUsers.forEach((userData, userWs) => {
-              console.log(`:::: chatId: ${chatId}`);
-              console.log(`:::: userData.chats: ${Array.from(userData.chats)}`);
-              if (userData.chats.has(chatId.toString())) {
-                try {
-                  userWs.send(
-                    JSON.stringify({
-                      type: "seenMessage",
-                      userId: userId,
-                      load: {
-                        chatId: chatId,
-                        messagesId: messagesArray,
-                      },
-                    })
-                  );
-                } catch (error) {
-                  logger.logErrorMsg(
-                    `SOCKET Error sending seen status to user ${userData.userId}: ${error.message}`
-                  );
+              // Notify all participants in the chat about the seen status
+              onlineUsers.forEach((userData, userWs) => {
+                if (userData.chats.has(chatId.toString())) {
+                  try {
+                    userWs.send(
+                      JSON.stringify({
+                        type: "seenMessage",
+                        userId: userId,
+                        load: { chatId: chatId, messagesId: messagesId },
+                      })
+                    );
+                  } catch (error) {
+                    logger.logErrorMsg(
+                      `SOCKET Error sending seen notification to user ${userData.userId}: ${error.message}`
+                    );
+                  }
                 }
-              }
-            });
+              });
+            } else {
+              logger.logInfoMsg(
+                `SOCKET No messages found to mark as seen in chat ${chatId}`
+              );
+              ws.send(
+                JSON.stringify({ error: "No messages found to mark as seen" })
+              );
+            }
           } catch (error) {
             logger.logErrorMsg(
-              `SOCKET Error marking message as seen: ${error.message}`
+              `SOCKET Error marking messages as seen for chat ${chatId}: ${error.message}`
             );
             ws.send(
-              JSON.stringify({ error: "Failed to mark message as seen" })
+              JSON.stringify({ error: "Error marking messages as seen" })
             );
           }
         } else if (type === "isTyping") {

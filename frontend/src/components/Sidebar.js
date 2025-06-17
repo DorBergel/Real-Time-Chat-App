@@ -3,6 +3,7 @@ import "../styles/Sidebar.css";
 import { useWebSocket } from "../WebSocketContext"; // Use the hook, not the provider
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import ToggleButton from "react-bootstrap/ToggleButton";
+import Button from "react-bootstrap/Button";
 import { fetchData } from "../fetcher";
 import GroupCreationForm from "./GroupCreationForm";
 import Popup from "./Popup"; // Import the Popup component
@@ -200,8 +201,11 @@ const Sidebar = ({
               <div
                 key={chat._id} // Use unique identifier
                 className={`chat_item ${
-                  chat.lastMessage?.seen ? "seen_item" : "unseen_item"
-                }`}
+                  chat.lastMessage?.seenBy?.length ===
+                  chat.participants.length - 1
+                    ? "seen_item"
+                    : "unseen_item"
+                } ${chat.lastMessage?.sender === userId ? "sent_by_user" : ""}`} // Add conditional class for messages sent by the current user
                 onClick={() => handleChatItemClick(chat._id)} // Pass type
               >
                 <h3>
@@ -226,12 +230,18 @@ const Sidebar = ({
                       : "N/A"}
                   </span>
                   <span className="chat_item_status_seen">
-                    {chat.lastMessage?.author?._id === userId ||
-                    chat.lastMessage?.author === userId
-                      ? chat.lastMessage.seen
-                        ? "Seen"
-                        : "Not Seen"
-                      : ""}
+                    {chat.isGroup
+                      ? chat.lastMessage?.seenBy?.length ===
+                        chat.participants.length - 1
+                        ? "Seen by all"
+                        : `Seen by: ${chat.lastMessage?.seenBy
+                            ?.filter((userId) => userId !== userId)
+                            .join(", ")}`
+                      : chat.lastMessage?.seenBy?.some(
+                          (seenUserId) => seenUserId !== userId
+                        )
+                      ? "Seen"
+                      : "Not Seen"}
                   </span>
                 </div>
               </div>
@@ -278,12 +288,12 @@ const Sidebar = ({
       )}
 
       <div className="sidebar_footer">
-        <button
+        <Button
           className="create_group_button"
           onClick={handleCreateGroupClick}
         >
           Create Group
-        </button>
+        </Button>
       </div>
 
       {/* Use Popup component for GroupCreationForm */}
