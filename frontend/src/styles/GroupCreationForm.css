@@ -1,0 +1,31 @@
+.group_creation_form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: start;
+  width: 100%;
+}
+
+.contact_list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contact_item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.contact_item.card {
+  width: 100% !important;
+}
+.contact_item.selected {
+  background-color: #d1e7dd; /* Light green background for selected contacts */
+  border: 2px solid #0f5132; /* Dark green border */
+}

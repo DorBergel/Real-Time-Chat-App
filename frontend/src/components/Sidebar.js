@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/Sidebar.css";
-import { useState, useEffect } from "react";
 import { useWebSocket } from "../WebSocketContext"; // Use the hook, not the provider
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import ToggleButton from "react-bootstrap/ToggleButton";
+import Button from "react-bootstrap/Button";
 import { fetchData } from "../fetcher";
+import GroupCreationForm from "./GroupCreationForm";
+import Popup from "./Popup"; // Import the Popup component
 
 const Sidebar = ({
   username,
@@ -18,10 +20,11 @@ const Sidebar = ({
   const { socket, registerListener, unregisterListener } = useWebSocket(); // Use the hook to access the context
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
   const [listState, setListState] = useState("Chats");
+  const [showGroupCreationForm, setShowGroupCreationForm] = useState(false); // State to toggle the form visibility
 
   const handleChatItemClick = (chatId) => {
     console.log("Sidebar - handleChatItemClick - Chat ID:", chatId);
-    
+
     // Find the chat with the given ID
     const selectedChat = chats.find((chat) => chat._id === chatId);
     if (selectedChat) {
@@ -138,7 +141,6 @@ const Sidebar = ({
     console.log("Sidebar - DEBUG - Chats:", chats);
   }, [username, chats]);
 
-
   // sort chats by last message time
   const sortedChats = [...chats].sort((a, b) => {
     const aTime = new Date(a.lastMessage?.createdAt || 0);
@@ -146,12 +148,23 @@ const Sidebar = ({
     return bTime - aTime; // Sort in descending order
   });
 
+  const handleCreateGroupClick = () => {
+    console.log("Create Group button clicked");
+    setShowGroupCreationForm(true); // Show the group creation form
+  };
+
+  const handleCloseGroupCreationForm = () => {
+    setShowGroupCreationForm(false); // Hide the group creation form
+  };
+
   return (
     <div className="sidebar">
       <div className="sidebar_header">
         <div className="logo">
           {/* Logo can be an image or text */}
-          <h2 onClick={() => setCurrentChat(null)}>{username ? username : "ERROR"}</h2>
+          <h2 onClick={() => setCurrentChat(null)}>
+            {username ? username : "ERROR"}
+          </h2>
         </div>
         <div className="sidebar_buttons">
           <ButtonGroup className="sidebar_button_group">
@@ -188,13 +201,18 @@ const Sidebar = ({
               <div
                 key={chat._id} // Use unique identifier
                 className={`chat_item ${
-                  chat.lastMessage?.seen ? "seen_item" : "unseen_item"
-                }`}
+                  chat.lastMessage?.seenBy?.length ===
+                  chat.participants.length - 1
+                    ? "seen_item"
+                    : "unseen_item"
+                } ${chat.lastMessage?.sender === userId ? "sent_by_user" : ""}`} // Add conditional class for messages sent by the current user
                 onClick={() => handleChatItemClick(chat._id)} // Pass type
               >
                 <h3>
                   {chat.title || "Untitled Chat"}{" "}
-                  {chat.isTyping && <span className="typing-indicator">Typing...</span>}
+                  {chat.isTyping && (
+                    <span className="typing-indicator">Typing...</span>
+                  )}
                 </h3>
                 <p>{chat.lastMessage?.content || "No messages yet"}</p>
                 <hr />
@@ -212,11 +230,18 @@ const Sidebar = ({
                       : "N/A"}
                   </span>
                   <span className="chat_item_status_seen">
-                    {chat.lastMessage?.author?._id === userId || chat.lastMessage?.author === userId
-                      ? chat.lastMessage.seen
-                        ? "Seen"
-                        : "Not Seen"
-                      : ""}
+                    {chat.isGroup
+                      ? chat.lastMessage?.seenBy?.length ===
+                        chat.participants.length - 1
+                        ? "Seen by all"
+                        : `Seen by: ${chat.lastMessage?.seenBy
+                            ?.filter((userId) => userId !== userId)
+                            .join(", ")}`
+                      : chat.lastMessage?.seenBy?.some(
+                          (seenUserId) => seenUserId !== userId
+                        )
+                      ? "Seen"
+                      : "Not Seen"}
                   </span>
                 </div>
               </div>
@@ -260,6 +285,31 @@ const Sidebar = ({
             <p>No contacts available</p>
           )}
         </div>
+      )}
+
+      <div className="sidebar_footer">
+        <Button
+          className="create_group_button"
+          onClick={handleCreateGroupClick}
+        >
+          Create Group
+        </Button>
+      </div>
+
+      {/* Use Popup component for GroupCreationForm */}
+      {showGroupCreationForm && (
+        <Popup onClose={handleCloseGroupCreationForm}>
+          <GroupCreationForm
+            username={username}
+            chats={chats}
+            contacts={contacts}
+            setContacts={setContacts}
+            currentChat={currentChat}
+            setCurrentChat={setCurrentChat}
+            setChats={setChats}
+            socket={socket}
+          />
+        </Popup>
       )}
     </div>
   );

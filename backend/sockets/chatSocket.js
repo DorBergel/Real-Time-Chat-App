@@ -139,7 +139,9 @@ exports.initializeChatWebSocket = (server) => {
               newChat.lastMessage = newMessage._id;
               await newChat.save(); // Now chat has lastMessage properly saved
 
-              logger.logInfoMsg(`SOCKET New chat created with ID: ${newChat._id}`);
+              logger.logInfoMsg(
+                `SOCKET New chat created with ID: ${newChat._id}`
+              );
 
               // Step 4: Update onlineUsers chat tracking
               onlineUsers.forEach((userData) => {
@@ -189,7 +191,9 @@ exports.initializeChatWebSocket = (server) => {
                       `SOCKET Added new chat ID ${newChat._id} to user ${participantId}`
                     );
                   } else {
-                    logger.logErrorMsg(`SOCKET Participant not found: ${participantId}`);
+                    logger.logErrorMsg(
+                      `SOCKET Participant not found: ${participantId}`
+                    );
                   }
                 })
               );
@@ -208,9 +212,13 @@ exports.initializeChatWebSocket = (server) => {
               foundChat.lastMessage = newMessage._id;
               await foundChat.save();
 
-              logger.logInfoMsg(`SOCKET New message created with ID: ${newMessage._id}`);
+              logger.logInfoMsg(
+                `SOCKET New message created with ID: ${newMessage._id}`
+              );
 
-              const populatedMessage = await Message.findById(newMessage._id).populate({
+              const populatedMessage = await Message.findById(
+                newMessage._id
+              ).populate({
                 path: "author",
                 model: User,
                 select: "username _id",
@@ -251,75 +259,83 @@ exports.initializeChatWebSocket = (server) => {
         } else if (type === "seenMessage") {
           const { chatId, messagesId } = load;
 
-          if (!chatId || !messagesId) {
-            logger.logErrorMsg("SOCKET Chat ID or Message ID not provided");
-            ws.send(JSON.stringify({ error: "Chat ID or Message ID not provided" }));
+          if (
+            !chatId ||
+            !Array.isArray(messagesId) ||
+            messagesId.length === 0
+          ) {
+            logger.logErrorMsg(
+              "SOCKET Chat ID or Message ID not provided or invalid"
+            );
+            ws.send(
+              JSON.stringify({
+                error: "Chat ID or Message ID not provided or invalid",
+              })
+            );
             return;
           }
 
           try {
-            // Find the chat and update the seen status of each message from messagesId
-            const chat = await Chat.findById(chatId);
-            if (!chat) {
-              logger.logErrorMsg(`SOCKET Chat not found: ${chatId}`);
-              ws.send(JSON.stringify({ error: "Chat not found" }));
-              return;
-            }
-
-            // Ensure messagesId is an array
-            const messagesArray = Array.isArray(messagesId) ? messagesId : [messagesId];
-
-            // Update the seen (false to true) status of each message
-            const updatedMessages = await Message.updateMany(
-              { _id: { $in: messagesArray }, chat: chatId },
-              { $set: { seen: true } }
+            // Find the relevant messages and update seenBy array
+            const messages = await Message.updateMany(
+              { _id: { $in: messagesId }, chat: chatId },
+              { $addToSet: { seenBy: userId } }
             );
 
-            // Ensure at least one message was updated
-            if (updatedMessages.modifiedCount === 0) {
-              logger.logInfoMsg(`SOCKET No messages updated for chat ${chatId}`);
-              ws.send(JSON.stringify({ error: "No messages updated" }));
-              return;
+            // Check if any messages were updated
+            if (messages.modifiedCount > 0) {
+              logger.logInfoMsg(
+                `SOCKET User ${userId} marked messages as seen in chat ${chatId}`
+              );
+
+              // Notify all participants in the chat about the seen status
+              onlineUsers.forEach((userData, userWs) => {
+                if (userData.chats.has(chatId.toString())) {
+                  try {
+                    userWs.send(
+                      JSON.stringify({
+                        type: "seenMessage",
+                        userId: userId,
+                        load: { chatId: chatId, messagesId: messagesId },
+                      })
+                    );
+                  } catch (error) {
+                    logger.logErrorMsg(
+                      `SOCKET Error sending seen notification to user ${userData.userId}: ${error.message}`
+                    );
+                  }
+                }
+              });
+            } else {
+              logger.logInfoMsg(
+                `SOCKET No messages found to mark as seen in chat ${chatId}`
+              );
+              ws.send(
+                JSON.stringify({ error: "No messages found to mark as seen" })
+              );
             }
-
-            logger.logInfoMsg(`SOCKET Messages marked as seen for chat ${chatId}`);
-            
-            // Notify all participants in the chat about the seen status
-            onlineUsers.forEach((userData, userWs) => {
-              console.log(`:::: chatId: ${chatId}`);
-              console.log(`:::: userData.chats: ${Array.from(userData.chats)}`);
-              if (userData.chats.has(chatId.toString())) {
-                try {
-                  userWs.send(
-                    JSON.stringify({
-                      type: "seenMessage",
-                      userId: userId,
-                      load: {
-                        chatId: chatId,
-                        messagesId: messagesArray,
-                      }
-                    })
-                  );
-                } catch (error) {
-                  logger.logErrorMsg(`SOCKET Error sending seen status to user ${userData.userId}: ${error.message}`);
-                }}});
-
+          } catch (error) {
+            logger.logErrorMsg(
+              `SOCKET Error marking messages as seen for chat ${chatId}: ${error.message}`
+            );
+            ws.send(
+              JSON.stringify({ error: "Error marking messages as seen" })
+            );
           }
-          catch (error) {
-            logger.logErrorMsg(`SOCKET Error marking message as seen: ${error.message}`);
-            ws.send(JSON.stringify({ error: "Failed to mark message as seen" }));
-          }
-
         } else if (type === "isTyping") {
           const { chatId } = load;
 
           if (!chatId) {
-            logger.logErrorMsg("SOCKET Chat ID not provided for typing notification");
+            logger.logErrorMsg(
+              "SOCKET Chat ID not provided for typing notification"
+            );
             ws.send(JSON.stringify({ error: "Chat ID not provided" }));
             return;
           }
 
-          logger.logInfoMsg(`SOCKET User ${userId} is typing in chat ${chatId}`);
+          logger.logInfoMsg(
+            `SOCKET User ${userId} is typing in chat ${chatId}`
+          );
           onlineUsers.forEach((userData, userWs) => {
             if (userData.chats.has(chatId.toString())) {
               try {
@@ -331,7 +347,77 @@ exports.initializeChatWebSocket = (server) => {
                   })
                 );
               } catch (error) {
-                logger.logErrorMsg(`SOCKET Error sending typing notification to user ${userData.userId}: ${error.message}`);
+                logger.logErrorMsg(
+                  `SOCKET Error sending typing notification to user ${userData.userId}: ${error.message}`
+                );
+              }
+            }
+          });
+        } else if (type === "newGroup") {
+          const { participants, title } = load;
+          const chatParticipants = [userId, ...participants];
+
+          // Ensure participants is an array and has at least one participant
+          if (!chatParticipants || chatParticipants.length === 0) {
+            logger.logErrorMsg("SOCKET No participants provided for new group");
+            ws.send(JSON.stringify({ error: "No participants provided" }));
+            return;
+          }
+
+          // Create a new group chat document
+          const newGroupChat = new Chat({
+            title: title,
+            participants: chatParticipants,
+            isGroup: true,
+          });
+          await newGroupChat.save();
+          logger.logInfoMsg(
+            `SOCKET New group chat created with ID: ${newGroupChat._id}`
+          );
+
+          // Add the new group chat to each participant's chats
+          await Promise.all(
+            chatParticipants.map(async (participantId) => {
+              const participant = await User.findById(participantId);
+              if (participant) {
+                participant.chats.push(newGroupChat._id);
+                await participant.save();
+                logger.logInfoMsg(
+                  `SOCKET Added new group chat ID ${newGroupChat._id} to user ${participantId}`
+                );
+              } else {
+                logger.logErrorMsg(
+                  `SOCKET Participant not found: ${participantId}`
+                );
+              }
+            })
+          );
+
+          // Update onlineUsers with the new group chat
+          onlineUsers.forEach((userData) => {
+            if (chatParticipants.includes(userData.userId)) {
+              userData.chats.add(newGroupChat._id.toString());
+            }
+          });
+          logger.logInfoMsg(
+            `SOCKET Updated online users with new group chat ID: ${newGroupChat._id}`
+          );
+
+          // Notify all participants about the new group chat
+          onlineUsers.forEach((userData, userWs) => {
+            if (userData.chats.has(newGroupChat._id.toString())) {
+              try {
+                userWs.send(
+                  JSON.stringify({
+                    type: "newGroup",
+                    userId: userId,
+                    load: { chat: newGroupChat },
+                  })
+                );
+              } catch (error) {
+                logger.logErrorMsg(
+                  `SOCKET Error sending new group notification to user ${userData.userId}: ${error.message}`
+                );
               }
             }
           });
