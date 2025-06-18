@@ -7,6 +7,7 @@ import Button from "react-bootstrap/Button";
 import { fetchData } from "../fetcher";
 import GroupCreationForm from "./GroupCreationForm";
 import Popup from "./Popup"; // Import the Popup component
+import Settings from "./Settings";
 
 const Sidebar = ({
   username,
@@ -21,6 +22,7 @@ const Sidebar = ({
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
   const [listState, setListState] = useState("Chats");
   const [showGroupCreationForm, setShowGroupCreationForm] = useState(false); // State to toggle the form visibility
+  const [showSettings, setShowSettings] = useState(false); // State for settings popup
 
   const handleChatItemClick = (chatId) => {
     console.log("Sidebar - handleChatItemClick - Chat ID:", chatId);
@@ -155,6 +157,11 @@ const Sidebar = ({
 
   const handleCloseGroupCreationForm = () => {
     setShowGroupCreationForm(false); // Hide the group creation form
+  };
+
+  const handleSettingsClick = () => {
+    console.log("Settings button clicked");
+    setShowSettings(true);
   };
 
   return (
@@ -294,6 +301,9 @@ const Sidebar = ({
         >
           Create Group
         </Button>
+        <Button className="settings_button" onClick={handleSettingsClick}>
+          Settings
+        </Button>
       </div>
 
       {/* Use Popup component for GroupCreationForm */}
@@ -309,6 +319,11 @@ const Sidebar = ({
             setChats={setChats}
             socket={socket}
           />
+        </Popup>
+      )}
+      {showSettings && (
+        <Popup onClose={() => setShowSettings(false)}>
+          <Settings username={username} />
         </Popup>
       )}
     </div>
