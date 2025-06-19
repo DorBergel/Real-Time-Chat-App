@@ -4,6 +4,7 @@ import { useWebSocket } from "../WebSocketContext"; // Use the hook, not the pro
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import ToggleButton from "react-bootstrap/ToggleButton";
 import Button from "react-bootstrap/Button";
+import Image from "react-bootstrap/Image";
 import { fetchData } from "../fetcher";
 import GroupCreationForm from "./GroupCreationForm";
 import Popup from "./Popup"; // Import the Popup component
@@ -17,6 +18,7 @@ const Sidebar = ({
   currentChat,
   setCurrentChat,
   setChats,
+  userDocument,
 }) => {
   const { socket, registerListener, unregisterListener } = useWebSocket(); // Use the hook to access the context
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
@@ -164,14 +166,29 @@ const Sidebar = ({
     setShowSettings(true);
   };
 
+  console.log(
+    `{imgSrc: ${process.env.REACT_APP_API_URL}/uploads/profile-pictures/${
+      userDocument?.profilePicture || "default.jpeg"
+    }`
+  );
+
   return (
     <div className="sidebar">
       <div className="sidebar_header">
-        <div className="logo">
-          {/* Logo can be an image or text */}
-          <h2 onClick={() => setCurrentChat(null)}>
-            {username ? username : "ERROR"}
-          </h2>
+        <div className="user-details">
+          <div className="user-info">
+            <Image
+              src={`${process.env.REACT_APP_API_URL}/uploads/profile-pictures/${
+                userDocument?.profilePicture || "default.jpeg"
+              }`}
+              alt="User Profile"
+              className="user-profile-image"
+              roundedCircle
+            />
+            <h2 onClick={() => setCurrentChat(null)}>
+              {username ? username : "ERROR"}
+            </h2>
+          </div>
         </div>
         <div className="sidebar_buttons">
           <ButtonGroup className="sidebar_button_group">

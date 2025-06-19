@@ -13,6 +13,24 @@
   justify-content: space-between;
 }
 
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+.user-profile-image {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+}
+
+.user-info h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
 .sidebar_buttons {
   display: flex;
   flex-direction: column;

@@ -36,30 +36,24 @@ const Settings = ({ username }) => {
 
     try {
       const response = await fetchData(
-        `${process.env.REACT_APP_API_URL}/api/user/profile-picture/upload/${userId}`,
+        `${process.env.REACT_APP_API_URL}/api/user/profile-picture/${userId}`,
         {
           method: "POST",
           body: formData,
-          credentials: "include",
         }
       );
-
       if (!response.ok) {
-        throw new Error("Upload failed");
+        throw new Error("Failed to upload image");
       }
-
-      alert("Profile picture updated successfully!");
-      setSelectedImage(null);
-
-      // Reset the file input
-      const fileInput = document.querySelector('input[type="file"]');
-      if (fileInput) {
-        fileInput.value = "";
-      }
+      const data = await response.json();
+      console.log("Image uploaded successfully:", data);
+      alert("Profile picture updated successfully");
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Failed to upload image. Please try again.");
+      alert("Failed to upload profile picture. Please try again.");
     }
+    setSelectedImage(null); // Clear the selected image after upload
+    document.querySelector("#profileImage").value = ""; // Reset the file input
   };
 
   return (

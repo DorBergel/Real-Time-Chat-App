@@ -20,6 +20,7 @@ function AppManager() {
   const [currentChat, setCurrentChat] = useState(null); // State to hold current chat
   const [currentMessages, setCurrentMessages] = useState([]); // State to hold current messages
   const { socket, registerListener, unregisterListener } = useWebSocket(); // Access WebSocket context
+  const [userDocument, setUserDocument] = useState(null); // State to hold user document
 
   // Register WebSocket listener
   useEffect(() => {
@@ -91,6 +92,7 @@ function AppManager() {
           "AppManager - useEffect - User data fetched successfully:",
           data
         );
+        setUserDocument(data.user);
         setUsername(data.user.username);
         setUserContacts(data.user.contacts || []);
         setUserChats(data.user.chats || []);
@@ -110,6 +112,7 @@ function AppManager() {
           setContacts={setUserContacts}
           currentChat={currentChat}
           setCurrentChat={setCurrentChat}
+          userDocument={userDocument}
         />
       </div>
       <div className="chat_container">

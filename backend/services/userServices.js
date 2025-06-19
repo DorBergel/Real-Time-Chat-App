@@ -21,11 +21,14 @@ exports.getUserContacts = async (userId) => {
 
 exports.getUserChats = async (userId) => {
   // Find the user by ID and populate the chats and lastMessage fields
-  const user = await User.findById(userId).populate({path: "chats", populate: {path: "lastMessage", model: "Message"}});
+  const user = await User.findById(userId).populate({
+    path: "chats",
+    populate: { path: "lastMessage", model: "Message" },
+  });
   if (!user) {
     throw new Error("User not found");
-  } 
-  
+  }
+
   // Return the chats of the user
   return user.chats;
 };
@@ -41,7 +44,6 @@ exports.getUserById = async (userId) => {
 };
 
 exports.addContact = async (userId, contactUsername) => {
-  
   // Find the user by ID
   const user = await User.findById(userId);
   if (!user) {
@@ -71,13 +73,13 @@ exports.addContact = async (userId, contactUsername) => {
 
   // Return the updated contacts list
   return returnValue.contacts;
-}
+};
 
 exports.createChat = async (userId, contactId) => {
   // Find the user by ID and populate the chats and participants fields
   const user = await User.findById(userId).populate({
     path: "chats",
-    populate: { path: "participants", model: "User" }
+    populate: { path: "participants", model: "User" },
   });
   if (!user) {
     throw new Error("User not found");
@@ -93,10 +95,13 @@ exports.createChat = async (userId, contactId) => {
   console.log(`contact: ${contact}`);
 
   // Check if the chat already exists
-  const existingChat = user.chats.find(chat => 
-    chat.participants &&
-    chat.participants.some(participant => participant._id.equals(contact._id)) &&
-    chat.participants.some(participant => participant._id.equals(user._id))
+  const existingChat = user.chats.find(
+    (chat) =>
+      chat.participants &&
+      chat.participants.some((participant) =>
+        participant._id.equals(contact._id)
+      ) &&
+      chat.participants.some((participant) => participant._id.equals(user._id))
   );
   if (existingChat) {
     throw new Error("Chat already exists with this contact");
@@ -123,19 +128,52 @@ exports.createChat = async (userId, contactId) => {
     .populate({ path: "lastMessage", model: "Message" })
     .populate({ path: "participants", model: "User" });
 
-    return populatedChat;
+  return populatedChat;
 };
 
 exports.getUserDocById = async (userId) => {
   // Find the user by ID and return the user document
-  const user = await User.findById(userId).populate({
-    path: "chats",
-    populate: { path: "lastMessage", model: "Message" }
-  }).populate("contacts");
+  const user = await User.findById(userId)
+    .populate({
+      path: "chats",
+      populate: { path: "lastMessage", model: "Message" },
+    })
+    .populate("contacts");
   logDebugMsg(`getUserDocById: userId: ${userId}, user: ${user}`);
   if (!user) {
     throw new Error("User not found");
   }
 
   return user;
+};
+
+exports.uploadProfilePicture = async (userId, file) => {
+  // Find the user by ID
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+  if (!file) {
+    throw new Error("No file uploaded");
+  }
+
+  // Update the user's profile picture
+  user.profilePicture = file.filename;
+  const updatedUser = await user.save();
+  logDebugMsg(`Profile picture uploaded for user ${userId}: ${file.filename}`);
+
+  // Return the updated user document
+  return updatedUser;
+};
+
+exports.getProfilePicture = async (userId) => {
+  // Find the user by ID
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Return the user's profile picture URL
+  return user.profilePicture;
 };

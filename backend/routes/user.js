@@ -1,6 +1,7 @@
 const express = require("express");
 const authController = require("../controllers/userController");
 const verifyUserAccess = require("../middlewares/verifyUserAccess");
+const upload = require("../middlewares/uploadMiddleware");
 const router = express.Router();
 
 /**
@@ -26,13 +27,9 @@ router.get(
  * @throws  {Error} - If the required data is not provided or if there is an error during retrieval
  * @notes   If the chat is not a group chat, the request user is not included in the participants list
  *          and the title of the chat is set to the participant's ID.
- *  
+ *
  */
-router.get(
-  "/chats/:userId",
-  verifyUserAccess,
-  authController.getUserChats
-);
+router.get("/chats/:userId", verifyUserAccess, authController.getUserChats);
 
 /**
  * @desc    Get user username
@@ -42,29 +39,37 @@ router.get(
  * @returns {object} - The username of the user
  * @throws  {Error} - If the required data is not provided or if there is an error during retrieval
  */
-router.get(
-  "/username/:userId",
-  verifyUserAccess,
-  authController.getUserById
-);
+router.get("/username/:userId", verifyUserAccess, authController.getUserById);
 
 router.post(
-"/contacts/add/:userId",
-verifyUserAccess,
-authController.addContact
-)
-
-router.post(
-  "/chats/create",
+  "/contacts/add/:userId",
   verifyUserAccess,
-  authController.createChat
+  authController.addContact
+);
+
+router.post("/chats/create", verifyUserAccess, authController.createChat);
+
+router.get("/user/:userId", verifyUserAccess, authController.getUserDocById);
+
+/**
+ * @desc    Upload profile picture
+ * @route   POST /api/user/profile-picture/:userId
+ * @access  Private
+ * @param   {string} userId - The ID of the user whose profile picture is to be uploaded
+ * @returns {object} - The updated user document with the new profile picture URL
+ * @throws  {Error} - If the required data is not provided or if there is an error during upload
+ */
+router.post(
+  "/profile-picture/:userId",
+  verifyUserAccess,
+  upload.single("profilePicture"),
+  authController.uploadProfilePicture
 );
 
 router.get(
-  "/user/:userId",
+  "/profile-picture/:userId",
   verifyUserAccess,
-  authController.getUserDocById
+  authController.getProfilePicture
 );
 
 module.exports = router;
-
