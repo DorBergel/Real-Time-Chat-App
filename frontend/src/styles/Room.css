@@ -8,69 +8,92 @@
 }
 
 .room_header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background-color: #e0e0e0;
-    border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.room_header_content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.room_header_image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.chat-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .room_messages {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
-    background-color: #ffffff;
-    border-radius: 5px;
-    height: 70%;
-    overflow-y: auto; /* Allow scrolling if messages overflow */
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #ffffff;
+  border-radius: 5px;
+  height: 70%;
+  overflow-y: auto; /* Allow scrolling if messages overflow */
 }
 
 .message {
-    padding: 0.5rem;
-    border-radius: 5px;
-    background-color: #e0e0e0;
-    max-width: 80%; /* Limit the width of messages */
-
+  padding: 0.5rem;
+  border-radius: 5px;
+  background-color: #e0e0e0;
+  max-width: 80%; /* Limit the width of messages */
 }
 
 .sent {
-    align-self: flex-end; /* Align sent messages to the right */
-    background-color: #d1ffd1; /* Light green for sent messages */
+  align-self: flex-end; /* Align sent messages to the right */
+  background-color: #d1ffd1; /* Light green for sent messages */
 }
 
 .received {
-    align-self: flex-start; /* Align received messages to the left */
-    background-color: #ffd1d1; /* Light red for received messages */
+  align-self: flex-start; /* Align received messages to the left */
+  background-color: #ffd1d1; /* Light red for received messages */
 }
 
 .room_input {
-    display: flex;
-    gap: 1rem;
-    padding: 1rem;
-    background-color: #ffffff;
-    border-radius: 5px;
-
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #ffffff;
+  border-radius: 5px;
 }
 
 .typing-indicator p {
-    display: inline-block;
-    font-size: 14px;
-    color: gray;
+  display: inline-block;
+  font-size: 14px;
+  color: gray;
 }
 
 .typing-dots span {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    margin: 0 2px;
-    background-color: gray;
-    border-radius: 50%;
-    animation: blink 1.5s infinite;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin: 0 2px;
+  background-color: gray;
+  border-radius: 50%;
+  animation: blink 1.5s infinite;
 }
 
 @keyframes blink {
-    0%, 100% { opacity: 0.2; }
-    50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
 }

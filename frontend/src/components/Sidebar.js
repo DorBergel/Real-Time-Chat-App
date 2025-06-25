@@ -4,9 +4,12 @@ import { useWebSocket } from "../WebSocketContext"; // Use the hook, not the pro
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import ToggleButton from "react-bootstrap/ToggleButton";
 import Button from "react-bootstrap/Button";
+import Image from "react-bootstrap/Image";
 import { fetchData } from "../fetcher";
-import GroupCreationForm from "./GroupCreationForm";
+import GroupCreationForm from "./Popups/GroupCreationForm";
 import Popup from "./Popup"; // Import the Popup component
+import Settings from "./EditProfile";
+import { Col, Row } from "react-bootstrap";
 
 const Sidebar = ({
   username,
@@ -16,11 +19,13 @@ const Sidebar = ({
   currentChat,
   setCurrentChat,
   setChats,
+  userDocument,
 }) => {
   const { socket, registerListener, unregisterListener } = useWebSocket(); // Use the hook to access the context
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
   const [listState, setListState] = useState("Chats");
   const [showGroupCreationForm, setShowGroupCreationForm] = useState(false); // State to toggle the form visibility
+  const [showSettings, setShowSettings] = useState(false); // State for settings popup
 
   const handleChatItemClick = (chatId) => {
     console.log("Sidebar - handleChatItemClick - Chat ID:", chatId);
@@ -39,51 +44,58 @@ const Sidebar = ({
     }
   };
 
+  /**
+   * @description Handles the click event on a contact item in the sidebar.
+   * If there is an existing private chat with the contact, it sets that chat as the current chat.
+   * If no chat exists, it creates a new temporary chat object and sends an newChat event to the server.
+   * @param {*} contactId
+   */
   const handleContactItemClick = (contactId) => {
     console.log("Sidebar - handleContactItemClick - Contact ID:", contactId);
-    const selectedContact = contacts.find(
-      (contact) => contact._id === contactId
+    console.log(
+      "Sidebar - handleContactItemClick - Contact: ",
+      contacts.find((contact) => contact._id === contactId)
     );
-    if (selectedContact) {
-      const existingChat = chats.find((chat) =>
-        chat.participants.includes(selectedContact._id)
+    // Check if there is an existing private chat with the contact
+    const existingChat = chats.find(
+      (chat) => chat.participants.includes(contactId) && !chat.isGroup
+    );
+
+    // If an existing chat is found, set it as the current chat
+    if (existingChat) {
+      console.log(
+        "Sidebar - handleContactItemClick - Existing chat found:",
+        existingChat
       );
-      if (existingChat) {
-        setCurrentChat(existingChat);
-      } else {
-        // Create a new chat with the selected contact, send an event to the server
-        console.log(
-          "Sidebar - handleContactItemClick - Creating new chat with contact:",
-          selectedContact
-        );
+      setCurrentChat(existingChat);
+    } // If no existing chat, create a new temporary chat object
+    else {
+      console.log("Sidebar - handleContactItemClick - No existing chat found");
+      const newChat = {
+        _id: `temp-${contactId}${userId}`,
+        title: "doesn't matter",
+        participants: [userId, contactId],
+        isGroup: false,
+        chatImage: "default_profile_picture.jpeg",
+      };
+      setCurrentChat(newChat); // Set the new chat as the current chat
+      console.log(
+        "Sidebar - handleContactItemClick - New temporary chat created:",
+        newChat
+      );
 
-        // Create a new temporary chat object
-        const newChat = {
-          _id: `temp-${contactId}`, // Temporary ID for the new chat
-          title: `${selectedContact.username} & ${username}` || "New Chat",
-          participants: [userId, selectedContact._id],
-        };
-
-        setCurrentChat(newChat);
-
-        socket.send(
-          JSON.stringify({
-            type: "newChat",
-            userId: userId,
-            load: newChat,
-          })
-        );
-
-        console.log(
-          "Sidebar - handleContactItemClick - New chat created and sent to server:",
-          newChat
-        );
-
-        // The server should recieve this, create the chat, and then send it back to client.
-        // TODO: Handle the server response to update the chats state
-      }
-    } else {
-      console.error("Sidebar - Contact not found:", contactId);
+      socket.send(
+        JSON.stringify({
+          type: "newChat",
+          userId: userId,
+          load: {
+            chat: newChat,
+          },
+        })
+      );
+      console.log(
+        "Sidebar - handleContactItemClick - Sent newChat event to server"
+      );
     }
   };
 
@@ -93,53 +105,7 @@ const Sidebar = ({
       "Sidebar - handleSearchButtonClick - Search Input Value:",
       searchInput.value
     );
-    fetchData(
-      `${process.env.REACT_APP_API_URL}/api/user/contacts/add/${userId}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: { contactUsername: searchInput.value },
-      }
-    )
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log(
-          "Sidebar - handleSearchButtonClick - Search results:",
-          data
-        );
-        if (data.contacts && Array.isArray(data.contacts)) {
-          setContacts(data.contacts);
-        }
-      })
-      .catch((error) => {
-        if (error.status === 404) {
-          console.error(
-            "Sidebar - handleSearchButtonClick - Contact not found:",
-            error
-          );
-          alert("Contact not found. Please check the username and try again.");
-        } else {
-          console.error(
-            "Sidebar - handleSearchButtonClick - There was a problem with the fetch operation:",
-            error
-          );
-          alert("Search failed. Please try again.");
-        }
-      });
   };
-
-  // Debug effect to log user data
-  useEffect(() => {
-    console.log("Sidebar - DEBUG - Username:", username);
-    console.log("Sidebar - DEBUG - Chats:", chats);
-  }, [username, chats]);
 
   // sort chats by last message time
   const sortedChats = [...chats].sort((a, b) => {
@@ -150,21 +116,39 @@ const Sidebar = ({
 
   const handleCreateGroupClick = () => {
     console.log("Create Group button clicked");
+    console.log("showGroupCreationForm state before:", showGroupCreationForm);
     setShowGroupCreationForm(true); // Show the group creation form
   };
 
   const handleCloseGroupCreationForm = () => {
+    console.log("Closing group creation form");
     setShowGroupCreationForm(false); // Hide the group creation form
+  };
+
+  const handleSettingsClick = () => {
+    console.log("Settings button clicked");
+    setShowSettings(true);
   };
 
   return (
     <div className="sidebar">
       <div className="sidebar_header">
-        <div className="logo">
-          {/* Logo can be an image or text */}
-          <h2 onClick={() => setCurrentChat(null)}>
-            {username ? username : "ERROR"}
-          </h2>
+        <div className="user-details">
+          <div className="user-info">
+            <Image
+              src={`${process.env.REACT_APP_API_URL}/uploads/profile-pictures/${
+                userDocument?.profilePicture || "default.jpeg"
+              }`}
+              alt="User Profile"
+              className="user-profile-image"
+              roundedCircle
+              onClick={handleSettingsClick} // Open settings on profile image click
+              style={{ cursor: "pointer" }}
+            />
+            <h2 onClick={() => setCurrentChat(null)}>
+              {username ? username : "ERROR"}
+            </h2>
+          </div>
         </div>
         <div className="sidebar_buttons">
           <ButtonGroup className="sidebar_button_group">
@@ -199,50 +183,57 @@ const Sidebar = ({
           {chats.length > 0 ? (
             sortedChats.map((chat) => (
               <div
-                key={chat._id} // Use unique identifier
+                key={chat._id}
                 className={`chat_item ${
-                  chat.lastMessage?.seenBy?.length ===
-                  chat.participants.length - 1
-                    ? "seen_item"
-                    : "unseen_item"
-                } ${chat.lastMessage?.sender === userId ? "sent_by_user" : ""}`} // Add conditional class for messages sent by the current user
-                onClick={() => handleChatItemClick(chat._id)} // Pass type
+                  chat.lastMessage &&
+                  !chat.lastMessage.seenBy?.includes(userId) &&
+                  chat.lastMessage.author?._id !== userId
+                    ? "unseen_item"
+                    : ""
+                }`}
+                onClick={() => handleChatItemClick(chat._id)}
               >
-                <h3>
-                  {chat.title || "Untitled Chat"}{" "}
-                  {chat.isTyping && (
-                    <span className="typing-indicator">Typing...</span>
-                  )}
-                </h3>
-                <p>{chat.lastMessage?.content || "No messages yet"}</p>
-                <hr />
-                <div className="chat_item_status">
-                  <span className="chat_item_status_time">
-                    {chat.lastMessage?.createdAt
-                      ? new Date(chat.lastMessage.createdAt).toLocaleTimeString(
-                          [],
-                          {
+                <div className="chat_item_main">
+                  <div className="chat_item_content">
+                    <Image
+                      src={`${
+                        process.env.REACT_APP_API_URL
+                      }/uploads/profile-pictures/${
+                        chat.isGroup
+                          ? chat.chatImage || "default_group_picture.jpeg"
+                          : chat.participants.find((p) => p._id !== userId)
+                              ?.profilePicture || "default_profile_picture.jpeg"
+                      }`}
+                      alt="Chat"
+                      className="chat-profile-image"
+                      roundedCircle
+                    />
+                    <div className="chat_item_text">
+                      <h3>
+                        {chat.isGroup
+                          ? chat.title
+                          : chat.participants.find((p) => p._id !== userId)
+                              ?.username || "Unknown User"}
+                        {chat.isTyping && (
+                          <span className="typing-indicator">Typing...</span>
+                        )}
+                      </h3>
+                      <p>{chat.lastMessage?.content || "No messages yet"}</p>
+                    </div>
+                  </div>
+                  <div className="chat_item_status">
+                    <span className="chat_item_status_time">
+                      {chat.lastMessage?.createdAt
+                        ? new Date(
+                            chat.lastMessage.createdAt
+                          ).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
                             hour12: false,
-                          }
-                        )
-                      : "N/A"}
-                  </span>
-                  <span className="chat_item_status_seen">
-                    {chat.isGroup
-                      ? chat.lastMessage?.seenBy?.length ===
-                        chat.participants.length - 1
-                        ? "Seen by all"
-                        : `Seen by: ${chat.lastMessage?.seenBy
-                            ?.filter((userId) => userId !== userId)
-                            .join(", ")}`
-                      : chat.lastMessage?.seenBy?.some(
-                          (seenUserId) => seenUserId !== userId
-                        )
-                      ? "Seen"
-                      : "Not Seen"}
-                  </span>
+                          })
+                        : "N/A"}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))
@@ -273,12 +264,26 @@ const Sidebar = ({
           {contacts.length > 0 ? (
             contacts.map((contact) => (
               <div
-                key={contact._id} // Use unique identifier
+                key={contact._id}
                 className="contact_item"
-                onClick={() => handleContactItemClick(contact._id)} // Pass type
+                onClick={() => handleContactItemClick(contact._id)}
               >
-                <h3>{contact.username || "Unknown User"}</h3>
-                <p>{contact.status || "No status available"}</p>
+                <div className="contact_item_content">
+                  <Image
+                    src={`${
+                      process.env.REACT_APP_API_URL
+                    }/uploads/profile-pictures/${
+                      contact.profilePicture || "default.jpeg"
+                    }`}
+                    alt={contact.username}
+                    className="chat-profile-image"
+                    roundedCircle
+                  />
+                  <div className="contact_item_text">
+                    <h3>{contact.username || "Unknown User"}</h3>
+                    <p>{contact.status || "No status available"}</p>
+                  </div>
+                </div>
               </div>
             ))
           ) : (
@@ -311,8 +316,85 @@ const Sidebar = ({
           />
         </Popup>
       )}
+      {showSettings && (
+        <Popup onClose={() => setShowSettings(false)}>
+          <Settings userDocument={userDocument} />
+        </Popup>
+      )}
     </div>
   );
 };
 
 export default Sidebar;
+{
+  /**
+                <div
+                  key={chat._id}
+                  className={`chat_item `}
+                  onClick={() => handleChatItemClick(chat._id)}
+                >
+                  <div className="chat_item_content">
+                    <Image
+                      src={`${
+                        process.env.REACT_APP_API_URL
+                      }/uploads/profile-pictures/${
+                        chat.isGroup
+                          ? chat.chatImage || "default_group_picture.jpeg"
+                          : chat.participants.find((p) => p._id !== userId)
+                              ?.profilePicture || "default_profile_picture.jpeg"
+                      }`}
+                      alt="Chat"
+                      className="chat-profile-image"
+                      roundedCircle
+                    />
+                    <div className="chat_item_text">
+                      <h3>
+                        {chat.isGroup
+                          ? chat.title
+                          : chat.participants.find((p) => p._id !== userId)
+                              ?.username || "Unknown User"}
+                        {chat.isTyping && (
+                          <span className="typing-indicator">Typing...</span>
+                        )}
+                      </h3>
+                      <p>{chat.lastMessage?.content || "No messages yet"}</p>
+                    </div>
+                  </div>
+                  <hr />
+                  <div className="chat_item_status">
+                    <span className="chat_item_status_time">
+                      {chat.lastMessage?.createdAt
+                        ? new Date(chat.lastMessage.createdAt).toLocaleTimeString(
+                            [],
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: false,
+                            }
+                          )
+                        : "N/A"}
+                    </span>
+                    <span className="chat_item_status_seen">
+                      {chat.lastMessage &&
+                        (chat.lastMessage.author?._id === userId ||
+                          chat.lastMessage.author === userId) && // Only show if last message is mine
+                        (() => {
+                          const seenBy = Array.isArray(chat.lastMessage.seenBy)
+                            ? chat.lastMessage.seenBy.filter(
+                                (id) => id !== userId
+                              )
+                            : [];
+                          if (chat.isGroup) {
+                            // Group chat: show "seen by x of y"
+                            const totalMembers = chat.participants.length - 1; // exclude myself
+                            return `Seen by ${seenBy.length} of ${totalMembers}`;
+                          } else {
+                            // Private chat: show "Seen" or "Not Seen"
+                            return seenBy.length > 0 ? "Seen" : "Not Seen";
+                          }
+                        })()}
+                    </span>
+                  </div>
+                </div>
+              */
+}

@@ -92,25 +92,87 @@ exports.initializeChatWebSocket = (server) => {
         logger.logDebugMsg(`SOCKET Message content: ${JSON.stringify(load)}`);
 
         if (type === "newChat") {
-          const { participants, title } = load;
+          const { title, participants, isGroup, chatImage } = load.chat;
 
-          if (!participants || participants.length === 0) {
-            logger.logErrorMsg("SOCKET No participants provided for new chat");
-            ws.send(JSON.stringify({ error: "No participants provided" }));
-            return;
+          // If isGroup - title and chatImage are irrelevant
+          if (isGroup) {
+            if (participants.length > 2) {
+              logger.logErrorMsg(
+                "SOCKET Invalid participants for new private chat"
+              );
+
+              ws.send(
+                JSON.stringify({
+                  error: "Invalid participants for new private chat",
+                })
+              );
+              return;
+            }
+            logger.logInfoMsg(
+              `SOCKET Creating new temporary private chat for participants: ${participants}`
+            );
+
+            // Create a new chat object
+            const newChat = new Chat({
+              participants: participants,
+              title: title,
+              chatImage: chatImage,
+              isGroup: isGroup,
+            });
+
+            ws.send(
+              JSON.stringify({
+                type: "chatCreated",
+                userId: userId,
+                load: { chat: newChat },
+              })
+            );
+          } // If not a group chat, create a new chat object
+          else {
+            console.log(`DEBUG: Participants: ${participants}`);
+            console.log(`DEBUG: Title: ${title}`);
+            console.log(`DEBUG: Chat Image: ${chatImage}`);
+
+            if (participants.length !== 2) {
+              logger.logErrorMsg(
+                "SOCKET Invalid participants for new group chat"
+              );
+
+              ws.send(
+                JSON.stringify({
+                  error: "Invalid participants for new group chat",
+                })
+              );
+              return;
+            }
+            logger.logInfoMsg(
+              `SOCKET Creating new temporary group chat for participants: ${participants}`
+            );
+
+            // Create and save the new chat
+            // Create a new chat object (not saved)
+            const newChat = new Chat({
+              participants: participants,
+              title: title,
+              chatImage: chatImage,
+              isGroup: isGroup,
+            });
+
+            // Populate participants before sending to client
+            await newChat.populate({
+              path: "participants",
+              model: User,
+              select: "_id username profilePicture",
+            });
+
+            ws.send(
+              JSON.stringify({
+                type: "chatCreated",
+                userId: userId,
+                load: { chat: newChat },
+              })
+            );
           }
-
-          const newChat = new Chat({ participants, title });
-
-          logger.logInfoMsg(`SOCKET New chat created with ID: ${newChat._id}`);
-
-          ws.send(
-            JSON.stringify({
-              type: "chatCreated",
-              userId: userId,
-              load: { chat: newChat },
-            })
-          );
         } else if (type === "newMessage") {
           const { chat, message } = load;
 
@@ -125,6 +187,8 @@ exports.initializeChatWebSocket = (server) => {
                 _id: chat._id,
                 participants: chat.participants,
                 title: chat.title,
+                chatImage: chat.chatImage || "default_profile_picture.jpeg",
+                isGroup: false,
               });
 
               // Step 2: Create and save new message
@@ -154,15 +218,21 @@ exports.initializeChatWebSocket = (server) => {
               });
 
               // Step 5: Populate chat with lastMessage
-              const populatedChat = await Chat.findById(newChat._id).populate({
-                path: "lastMessage",
-                model: Message,
-                populate: {
-                  path: "author",
-                  model: User,
-                  select: "username _id",
-                },
-              });
+              const populatedChat = await Chat.findById(newChat._id)
+                .populate({
+                  path: "lastMessage",
+                  model: Message,
+                  populate: {
+                    path: "author",
+                    model: User,
+                    select: "username _id",
+                  },
+                })
+                .populate({
+                  path: "participants",
+                  model: "User",
+                  select: "_id username profilePicture",
+                });
 
               // Step 6: Notify participants via WebSocket
               onlineUsers.forEach((userData, ws) => {
@@ -354,7 +424,7 @@ exports.initializeChatWebSocket = (server) => {
             }
           });
         } else if (type === "newGroup") {
-          const { participants, title } = load;
+          const { participants, title, chatImage } = load;
           const chatParticipants = [userId, ...participants];
 
           // Ensure participants is an array and has at least one participant
@@ -369,6 +439,7 @@ exports.initializeChatWebSocket = (server) => {
             title: title,
             participants: chatParticipants,
             isGroup: true,
+            chatImage: chatImage || "default_group_picture.jpeg",
           });
           await newGroupChat.save();
           logger.logInfoMsg(

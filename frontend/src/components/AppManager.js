@@ -20,6 +20,7 @@ function AppManager() {
   const [currentChat, setCurrentChat] = useState(null); // State to hold current chat
   const [currentMessages, setCurrentMessages] = useState([]); // State to hold current messages
   const { socket, registerListener, unregisterListener } = useWebSocket(); // Access WebSocket context
+  const [userDocument, setUserDocument] = useState(null); // State to hold user document
 
   // Register WebSocket listener
   useEffect(() => {
@@ -36,6 +37,16 @@ function AppManager() {
           currentChat
         );
       } else if (message.type === "chatCreated") {
+        // If the currentChat is a temp chat, update it to the real chat
+        if (
+          currentChat &&
+          currentChat._id &&
+          currentChat._id.toString().includes("temp-") &&
+          message.load &&
+          message.load.chat
+        ) {
+          setCurrentChat(message.load.chat);
+        }
         handleNewChatCreated(
           message,
           userChats,
@@ -75,11 +86,11 @@ function AppManager() {
     };
     registerListener(handleWebSocketMessage);
     return () => unregisterListener(handleWebSocketMessage);
-  }, [registerListener, unregisterListener, userChats]);
+  }, [registerListener, unregisterListener, userChats, currentChat]);
 
   // Effect to fetch user data from backend
   useEffect(() => {
-    fetchData(`${process.env.REACT_APP_API_URL}/api/user/user/${userId}`)
+    fetchData(`${process.env.REACT_APP_API_URL}/api/user/${userId}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -91,6 +102,7 @@ function AppManager() {
           "AppManager - useEffect - User data fetched successfully:",
           data
         );
+        setUserDocument(data.user);
         setUsername(data.user.username);
         setUserContacts(data.user.contacts || []);
         setUserChats(data.user.chats || []);
@@ -110,6 +122,7 @@ function AppManager() {
           setContacts={setUserContacts}
           currentChat={currentChat}
           setCurrentChat={setCurrentChat}
+          userDocument={userDocument}
         />
       </div>
       <div className="chat_container">
@@ -118,6 +131,7 @@ function AppManager() {
             currentChat={currentChat}
             messages={currentMessages}
             setMessages={setCurrentMessages}
+            contacts={userContacts}
           />
         ) : (
           <div className="welcome_message">

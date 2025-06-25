@@ -1,3 +1,13 @@
+.popup_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4); /* semi-transparent */
+  z-index: 999; /* below popup */
+}
+
 .popup {
   position: fixed;
   flex-direction: column;
@@ -5,7 +15,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   width: 400px;
-  height: 300px;
+  height: 500px;
   background-color: white;
   border: 1px solid #000;
   padding: 20px;
@@ -13,6 +23,7 @@
   display: flex;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
+  z-index: 1000; /* above overlay */
 }
 
 .popup_content {
@@ -39,7 +50,8 @@
 }
 
 .popup_close:hover {
-  background-color: red; /* Optional hover effect */
+  background-color: black; /* Optional hover effect */
+  color: white; /* Change text color on hover */
 }
 
 /*
