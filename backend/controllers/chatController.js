@@ -1,8 +1,9 @@
-const chatServices = require("../services/chatServices");
 const logger = require("../utils/logger");
+const messageServices = require("../services/messageServices");
+const { get } = require("mongoose");
 
-exports.getChat = async (req, res) => {
-  logger.logInfoMsg(`${req.ip} is trying to get chat`);
+exports.getChatMessages = async (req, res) => {
+  logger.logInfoMsg(`${req.ip} is trying to get chat messages`);
 
   const { chatId } = req.params;
 
@@ -15,9 +16,9 @@ exports.getChat = async (req, res) => {
   }
 
   try {
-    const chat = await chatServices.getChat(chatId);
-    logger.logInfoMsg(`chat retrieved successfully`);
-    return res.status(200).json({ chat });
+    const messages = await messageServices.getChatMessages(chatId);
+    logger.logInfoMsg(`chat messages retrieved successfully`);
+    return res.status(200).json({ messages });
   } catch (err) {
     logger.logErrorMsg(`${err}`);
     return res.status(500).json({ reason: err.message });

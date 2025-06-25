@@ -49,7 +49,13 @@ const userSchema = mongoose.Schema(
       type: String,
       require: false,
       unique: false,
-      default: "default_profile_picture.png",
+      default: "default_profile_picture.jpeg",
+    },
+    status: {
+      type: String,
+      require: false,
+      unique: false,
+      default: "Hey there! I am using ChatApp.",
     },
   },
   {

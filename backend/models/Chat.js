@@ -20,7 +20,12 @@ const chatSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "./Message.js",
       require: false,
-      default: null
+      default: null,
+    },
+    chatImage: {
+      type: String,
+      require: false,
+      default: "default_profile_picture.jpeg",
     },
   },
   {

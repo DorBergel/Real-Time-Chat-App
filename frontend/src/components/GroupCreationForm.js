@@ -45,6 +45,7 @@ const GroupCreationForm = ({
         load: {
           title: groupName,
           participants: selectedContacts.map((contact) => contact._id),
+          chatImage: "default_group_picture.jpeg",
         },
       })
     );

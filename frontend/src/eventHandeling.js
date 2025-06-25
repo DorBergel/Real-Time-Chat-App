@@ -33,6 +33,8 @@ exports.handleNewMessageReceived = (
         ...updatedChats[chatIndex],
         lastMessage: message.load.message,
       };
+      console.log("Updated chat with new message:", updatedChats[chatIndex]);
+
       return updatedChats;
     });
 
@@ -127,55 +129,39 @@ exports.handleSeenEventReceived = (
   const { chatId, messagesId } = message.load;
   const userId = message.userId; // Extract the userId from the message
 
-  // Find the chat that the seen event belongs to
-  const chatIndex = userChats.findIndex((chat) => chat._id === chatId);
-  console.log("Chat index found:", chatIndex);
+  // Use functional updates to always get the latest state
+  setUserChats((prevChats) =>
+    prevChats.map((chat) => {
+      if (chat._id === chatId) {
+        // Prevent duplicate userId in seenBy
+        const lastMessage = chat.lastMessage || {};
+        const seenBy = Array.isArray(lastMessage.seenBy)
+          ? lastMessage.seenBy
+          : [];
+        return {
+          ...chat,
+          lastMessage: {
+            ...lastMessage,
+            seenBy: seenBy.includes(userId) ? seenBy : [...seenBy, userId],
+          },
+        };
+      }
+      return chat;
+    })
+  );
 
-  // If chat exists, update the seenBy array for the relevant messages
-  if (chatIndex !== -1) {
-    console.log(
-      "Updating seenBy status for messages in chat:",
-      userChats[chatIndex]
-    );
-
-    console.log(":::: userChats before update:", userChats);
-    console.log(":::: messagesId to update:", messagesId);
-
-    // Update the userChats seenBy state array for the last message
-    setUserChats((prevChats) => {
-      return prevChats.map((chat) => {
-        if (chat._id === chatId) {
-          return {
-            ...chat,
-            lastMessage: {
-              ...chat.lastMessage,
-              seenBy: [...(chat.lastMessage.seenBy || []), userId], // Add the userId to the seenBy array
-            },
-          };
-        }
-        return chat; // Return the chat unchanged if not the relevant chat
-      });
-    });
-
-    console.log(":::: userChats after update:", userChats);
-
-    console.log(":::: messages before update:", messages);
-
-    // Update the messages seenBy state array for the relevant messages
-    setMessages((prevMessages) => {
-      return prevMessages.map((msg) => {
-        if (messagesId.includes(msg._id)) {
-          return {
-            ...msg,
-            seenBy: [...(msg.seenBy || []), userId], // Add the userId to the seenBy array
-          };
-        }
-        return msg; // Return the message unchanged if not relevant
-      });
-    });
-
-    console.log(":::: messages after update:", messages);
-  }
+  setMessages((prevMessages) =>
+    prevMessages.map((msg) => {
+      if (messagesId.includes(msg._id)) {
+        const seenBy = Array.isArray(msg.seenBy) ? msg.seenBy : [];
+        return {
+          ...msg,
+          seenBy: seenBy.includes(userId) ? seenBy : [...seenBy, userId],
+        };
+      }
+      return msg;
+    })
+  );
 };
 
 /**

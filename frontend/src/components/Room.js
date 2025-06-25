@@ -2,11 +2,16 @@ import React, { useState, useEffect, use } from "react";
 import "../styles/Room.css";
 import { fetchData } from "../fetcher";
 import { useWebSocket } from "../WebSocketContext";
+import { Button, Form } from "react-bootstrap";
+import GroupDetails from "./Popups/GroupDetails";
+import UserChatDetails from "./Popups/UserChatDetails";
+import Popup from "./Popup";
 
-const Room = ({ currentChat, messages = [], setMessages }) => {
+const Room = ({ currentChat, messages = [], setMessages, contacts }) => {
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
   const [isTyping, setIsTyping] = useState(false);
   const { socket, registerListener, unregisterListener } = useWebSocket();
+  const [displayDetails, setDisplayDetails] = useState(false);
 
   // Effect to scroll to the bottom of the chat
   useEffect(() => {
@@ -19,6 +24,7 @@ const Room = ({ currentChat, messages = [], setMessages }) => {
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
+    // section to handle unseen messages
     const unseenMessages = messages.filter(
       (message) =>
         !message.seenBy?.includes(userId) && message.author?._id !== userId
@@ -74,7 +80,6 @@ const Room = ({ currentChat, messages = [], setMessages }) => {
     }
   }, [currentChat]); // Effect runs when currentChat changes
 
-  // when currentChat changes, we want to update the isTyping state
   useEffect(() => {
     if (currentChat) {
       setIsTyping(currentChat?.isTyping || false);
@@ -123,10 +128,51 @@ const Room = ({ currentChat, messages = [], setMessages }) => {
     }
   };
 
+  const handleOnChatHeaderClick = () => {
+    console.log("Room - handleOnChatHeaderClick - Current chat:", currentChat);
+    setDisplayDetails(!displayDetails); // Toggle for both group and non-group
+  };
+
+  const handleCloseDetails = () => {
+    console.log("Room - handleCloseDetails - Closing group details popup");
+    setDisplayDetails(false); // Close group details popup
+  };
+
   return (
     <div className="room">
-      <div className="room_header">
-        <h1>{currentChat.title}</h1>
+      <div className="room_header" onClick={handleOnChatHeaderClick}>
+        <div className="room_header_content">
+          <div className="room_header_image">
+            {currentChat.isGroup ? (
+              <img
+                src={`${
+                  process.env.REACT_APP_API_URL
+                }/uploads/profile-pictures/${
+                  currentChat.chatImage || "default_group_picture.jpeg"
+                }`}
+                alt="Group"
+                className="chat-image"
+              />
+            ) : (
+              <img
+                src={`${
+                  process.env.REACT_APP_API_URL
+                }/uploads/profile-pictures/${
+                  currentChat.participants.find((p) => p._id !== userId)
+                    ?.profilePicture || "default_profile_picture.jpeg"
+                }`}
+                alt="Profile"
+                className="chat-image"
+              />
+            )}
+          </div>
+          <h1>
+            {currentChat.isGroup
+              ? currentChat.title
+              : currentChat.participants.find((p) => p._id !== userId)
+                  ?.username || "Unknown User"}
+          </h1>
+        </div>
       </div>
       <div className="room_messages">
         {messages.map((message, index) => (
@@ -167,13 +213,23 @@ const Room = ({ currentChat, messages = [], setMessages }) => {
         )}
       </div>
       <div className="room_input">
-        <input
+        <Form.Control
           type="text"
           placeholder="Type a message..."
           onChange={handleTyping}
         />
-        <button onClick={handleSubmit}>Send</button>
+        <Button onClick={handleSubmit}>Send</Button>
       </div>
+      {displayDetails && currentChat.isGroup && (
+        <Popup onClose={handleCloseDetails}>
+          <GroupDetails currentChat={currentChat} />
+        </Popup>
+      )}
+      {displayDetails && !currentChat.isGroup && (
+        <Popup onClose={handleCloseDetails}>
+          <UserChatDetails currentChat={currentChat} />
+        </Popup>
+      )}
     </div>
   );
 };

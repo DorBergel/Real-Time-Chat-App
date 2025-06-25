@@ -37,6 +37,16 @@ function AppManager() {
           currentChat
         );
       } else if (message.type === "chatCreated") {
+        // If the currentChat is a temp chat, update it to the real chat
+        if (
+          currentChat &&
+          currentChat._id &&
+          currentChat._id.toString().includes("temp-") &&
+          message.load &&
+          message.load.chat
+        ) {
+          setCurrentChat(message.load.chat);
+        }
         handleNewChatCreated(
           message,
           userChats,
@@ -76,11 +86,11 @@ function AppManager() {
     };
     registerListener(handleWebSocketMessage);
     return () => unregisterListener(handleWebSocketMessage);
-  }, [registerListener, unregisterListener, userChats]);
+  }, [registerListener, unregisterListener, userChats, currentChat]);
 
   // Effect to fetch user data from backend
   useEffect(() => {
-    fetchData(`${process.env.REACT_APP_API_URL}/api/user/user/${userId}`)
+    fetchData(`${process.env.REACT_APP_API_URL}/api/user/${userId}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -121,6 +131,7 @@ function AppManager() {
             currentChat={currentChat}
             messages={currentMessages}
             setMessages={setCurrentMessages}
+            contacts={userContacts}
           />
         ) : (
           <div className="welcome_message">
