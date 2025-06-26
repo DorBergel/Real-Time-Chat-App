@@ -6,6 +6,8 @@ import ToggleButton from "react-bootstrap/ToggleButton";
 import Button from "react-bootstrap/Button";
 import Image from "react-bootstrap/Image";
 import { fetchData } from "../fetcher";
+import InputGroup from "react-bootstrap/InputGroup";
+import Form from "react-bootstrap/Form";
 import GroupCreationForm from "./Popups/GroupCreationForm";
 import Popup from "./Popup"; // Import the Popup component
 import Settings from "./EditProfile";
@@ -133,9 +135,9 @@ const Sidebar = ({
   return (
     <div className="sidebar">
       <div className="sidebar_header">
-        <div className="user-details">
-          <div className="user-info">
-            <Image
+        <Row>
+          <Col lg={3} className="sidebar_header_image">
+          <Image
               src={`${process.env.REACT_APP_API_URL}/uploads/profile-pictures/${
                 userDocument?.profilePicture || "default.jpeg"
               }`}
@@ -145,12 +147,14 @@ const Sidebar = ({
               onClick={handleSettingsClick} // Open settings on profile image click
               style={{ cursor: "pointer" }}
             />
-            <h2 onClick={() => setCurrentChat(null)}>
-              {username ? username : "ERROR"}
-            </h2>
-          </div>
-        </div>
-        <div className="sidebar_buttons">
+          </Col>
+          <Col lg={9} className="sidebar_header_title">
+            <h2>{username ? username: "ERROR"}</h2>
+            <p>{userDocument?.status || "No status available"}</p>
+          </Col>
+        </Row>
+        <Row className="sidebar_header_buttons">
+          <Col lg={12} className="sidebar_header_buttons">
           <ButtonGroup className="sidebar_button_group">
             <ToggleButton
               id="toggle-chat"
@@ -175,14 +179,15 @@ const Sidebar = ({
               Contacts
             </ToggleButton>
           </ButtonGroup>
-        </div>
+          </Col>
+          </Row>
       </div>
 
       {listState === "Chats" ? (
         <div className="items_list">
           {chats.length > 0 ? (
             sortedChats.map((chat) => (
-              <div
+              <Row
                 key={chat._id}
                 className={`chat_item ${
                   chat.lastMessage &&
@@ -193,49 +198,45 @@ const Sidebar = ({
                 }`}
                 onClick={() => handleChatItemClick(chat._id)}
               >
-                <div className="chat_item_main">
-                  <div className="chat_item_content">
-                    <Image
-                      src={`${
-                        process.env.REACT_APP_API_URL
-                      }/uploads/profile-pictures/${
-                        chat.isGroup
-                          ? chat.chatImage || "default_group_picture.jpeg"
-                          : chat.participants.find((p) => p._id !== userId)
-                              ?.profilePicture || "default_profile_picture.jpeg"
-                      }`}
-                      alt="Chat"
-                      className="chat-profile-image"
-                      roundedCircle
-                    />
-                    <div className="chat_item_text">
-                      <h3>
-                        {chat.isGroup
-                          ? chat.title
-                          : chat.participants.find((p) => p._id !== userId)
-                              ?.username || "Unknown User"}
-                        {chat.isTyping && (
-                          <span className="typing-indicator">Typing...</span>
-                        )}
-                      </h3>
-                      <p>{chat.lastMessage?.content || "No messages yet"}</p>
-                    </div>
-                  </div>
-                  <div className="chat_item_status">
-                    <span className="chat_item_status_time">
-                      {chat.lastMessage?.createdAt
-                        ? new Date(
-                            chat.lastMessage.createdAt
-                          ).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: false,
-                          })
-                        : "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                <Col lg={3} className="chat_item_image">
+                  <Image
+                    src={`${
+                      process.env.REACT_APP_API_URL
+                    }/uploads/profile-pictures/${
+                      chat.isGroup
+                        ? chat.chatImage || "default_group_picture.jpeg"
+                        : chat.participants.find((p) => p._id !== userId)
+                            ?.profilePicture || "default_profile_picture.jpeg"
+                    }`}
+                    alt="Chat"
+                    className="chat-profile-image"
+                    roundedCircle
+                  />
+                </Col>
+                <Col lg={6} className="chat_item_text">
+                  <h3>
+                    {chat.isGroup
+                      ? chat.title
+                      : chat.participants.find((p) => p._id !== userId)
+                          ?.username || "Unknown User"}
+                    {chat.isTyping && (
+                      <span className="typing-indicator">Typing...</span>
+                    )}
+                  </h3>
+                  <p>{chat.lastMessage?.content || "No messages yet"}</p>
+                </Col>
+                <Col lg={3} className="chat_item_status">
+                  <span className="chat_item_status_time">
+                    {chat.lastMessage?.createdAt
+                      ? new Date(chat.lastMessage.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                        })
+                      : "N/A"}
+                  </span>
+                </Col>
+              </Row>
             ))
           ) : (
             <p>No chats available</p>
@@ -244,31 +245,34 @@ const Sidebar = ({
       ) : (
         <div className="items_list">
           <div className="contact_search">
-            <input
-              id="searchContactInput"
-              type="text"
-              placeholder={`Search ${listState.toLowerCase()}...`}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  handleSearchButtonClick();
-                }
-              }}
-            />
-            <button
-              onClick={handleSearchButtonClick}
-              className="searchContactBtn"
-            >
-              Search
-            </button>
+          <InputGroup className="mb-3 contact_search">
+      <Form.Control
+        id="searchContactInput"
+        type="text"
+        placeholder={`Search ${listState.toLowerCase()}...`}
+        onKeyPress={(e) => {
+          if (e.key === "Enter") {
+            handleSearchButtonClick();
+          }
+        }}
+      />
+      <Button
+        variant="primary"
+        onClick={handleSearchButtonClick}
+        className="searchContactBtn"
+      >
+        Search
+      </Button>
+    </InputGroup>
           </div>
           {contacts.length > 0 ? (
             contacts.map((contact) => (
-              <div
+              <Row
                 key={contact._id}
                 className="contact_item"
                 onClick={() => handleContactItemClick(contact._id)}
               >
-                <div className="contact_item_content">
+                <Col lg={3} className="contact_item_image">
                   <Image
                     src={`${
                       process.env.REACT_APP_API_URL
@@ -276,15 +280,16 @@ const Sidebar = ({
                       contact.profilePicture || "default.jpeg"
                     }`}
                     alt={contact.username}
-                    className="chat-profile-image"
+                    className="contact-profile-image"
                     roundedCircle
                   />
-                  <div className="contact_item_text">
-                    <h3>{contact.username || "Unknown User"}</h3>
-                    <p>{contact.status || "No status available"}</p>
-                  </div>
-                </div>
-              </div>
+                </Col>
+                <Col lg={9} className="contact_item_text">
+                  <h3>{contact.username || "Unknown User"}</h3>
+                  <p>{contact.status || "No status available"}</p>
+                </Col>
+                
+              </Row>
             ))
           ) : (
             <p>No contacts available</p>
