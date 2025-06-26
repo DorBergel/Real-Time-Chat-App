@@ -47,12 +47,6 @@ const Sidebar = ({
     }
   };
 
-  /**
-   * @description Handles the click event on a contact item in the sidebar.
-   * If there is an existing private chat with the contact, it sets that chat as the current chat.
-   * If no chat exists, it creates a new temporary chat object and sends an newChat event to the server.
-   * @param {*} contactId
-   */
   const handleContactItemClick = (contactId) => {
     console.log("Sidebar - handleContactItemClick - Contact ID:", contactId);
     console.log(
