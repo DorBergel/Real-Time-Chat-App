@@ -32,3 +32,27 @@ exports.getUserDocById = async (req, res) => {
     return res.status(500).json({ reason: err.message });
   }
 };
+
+
+exports.uploadProfilePicture = async (req, res) => {
+  logger.logInfoMsg(`${req.ip} is trying to upload profile picture`);
+
+  const { userId } = req.params;
+
+  logger.logDebugMsg(`userId: ${userId}`);
+
+  // Verify the required data received
+  if (!userId || !req.file) {
+    logger.logErrorMsg(`required data not provided`);
+    return res.status(400).json({ reason: "required data not provided" });
+  }
+
+  try {
+    const updatedUserDoc = await userServices.uploadProfilePicture(userId, req.file);
+    logger.logInfoMsg(`profile picture uploaded successfully`);
+    return res.status(200).json({ user: updatedUserDoc });
+  } catch (err) {
+    logger.logErrorMsg(`${err}`);
+    return res.status(500).json({ reason: err.message });
+  }
+}

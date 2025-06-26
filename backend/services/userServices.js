@@ -42,23 +42,54 @@ exports.getUserDocById = async (userId) => {
   return user;
 };
 
-/*
-  <Form.Group controlId="groupImage">
-                <Form.Label>Group Image</Form.Label>
-                <img
-                  src={`${process.env.REACT_APP_API_URL}/uploads/profile-pictures/default_group_picture.jpeg`}
-                  alt="Group"
-                  className="group_image_preview"
-                />
-                <Form.Text className="text-muted">
-                  Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF
-                </Form.Text>
+exports.uploadProfilePicture = async (userId, file) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
 
-                <Form.Control
-                  type="input"
-                  accept="image/jpeg,image/png,image/gif"
-                  id="profileImage"
-                  onChange={handleImageChange}
-                />
-              </Form.Group>
-*/
+  if (!file || !file.path) {
+    throw new Error("File not provided or invalid");
+  }
+
+  // Update the user's profile picture URL
+  user.profilePicture = `${file.filename}`;
+  await user.save();
+
+  logDebugMsg(`uploadProfilePicture: userId: ${userId}, profilePicture: ${user.profilePicture}`);
+
+  // populate the user document exactly like in getUserDocById
+  const updatedUser = await User.findById(userId).populate({
+    path: "contacts",
+    model: User,
+    select: "_id username profilePicture status",
+  })
+  .populate({
+    path: "chats",
+    model: Chat,
+    populate: [
+      {
+        path: "participants",
+        model: User,
+        select: "_id username profilePicture",
+      },
+      {
+        path: "lastMessage",
+        model: "Message",
+        populate: {
+          path: "author",
+          model: User,
+          select: "_id username",
+        },
+      },
+    ],
+  });
+
+  logDebugMsg(`uploadProfilePicture: updatedUser: ${updatedUser}`);
+
+  if (!updatedUser) {
+    throw new Error("Updated user not found");
+  }
+
+  return updatedUser;
+};
