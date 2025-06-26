@@ -88,10 +88,54 @@ exports.editUserProfile = async (req, res) => {
     return res.status(400).json({ reason: "required data not provided" });
   }
 
+  // Verify that userData not contains sensitive fields
+  const sensitiveFields = ["_id", "hashed_password", "createdAt", "updatedAt"];
+  for (const field of sensitiveFields) {
+    if (userData[field]) {
+      logger.logErrorMsg(`sensitive field ${field} cannot be updated`);
+      return res.status(400).json({ reason: `sensitive field ${field} cannot be updated` });
+    }
+  }
+
   try {
     const updatedUserDoc = await userServices.editUserProfile(userId, userData);
     logger.logInfoMsg(`user profile edited successfully`);
     return res.status(200).json({ user: updatedUserDoc });
+  } catch (err) {
+    logger.logErrorMsg(`${err}`);
+    return res.status(500).json({ reason: err.message });
+  }
+}
+
+
+/**
+ * @desc    Change user password
+ * @route   PUT /api/user/password/:userId
+ * @access  Private
+ * @param   {string} userId - The ID of the user whose password is to be changed
+ * @param   {object} body - The data containing the old and new passwords
+ * @returns {object} - A success message or an error message
+ * @throws  {Error} - If the user is not found, if the old password is incorrect, or if there is an error during the update
+ * TODO: Add validation for password strength and format - check what happens in registration logic and consider reusing it
+ */
+exports.changeUserPassword = async (req, res) => {
+  logger.logInfoMsg(`${req.ip} is trying to change user password`);
+
+  const { userId } = req.params;
+  const { oldPassword, newPassword } = req.body;
+
+  logger.logDebugMsg(`userId: ${userId}, oldPassword: ${oldPassword}, newPassword: ${newPassword}`);
+
+  // Verify the required data received
+  if (!userId || !oldPassword || !newPassword) {
+    logger.logErrorMsg(`required data not provided`);
+    return res.status(400).json({ reason: "required data not provided" });
+  }
+
+  try {
+    await userServices.changeUserPassword(userId, oldPassword, newPassword);
+    logger.logInfoMsg(`user password changed successfully`);
+    return res.status(200).json({ message: "User password changed successfully" });
   } catch (err) {
     logger.logErrorMsg(`${err}`);
     return res.status(500).json({ reason: err.message });

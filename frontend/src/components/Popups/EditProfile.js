@@ -119,6 +119,62 @@ const Settings = ({ userDocument, setUserDocument }) => {
     }
   }
 
+  // Function to handle password change
+  const handleChangePasswordClick = async (e) => {
+    e.preventDefault();
+
+    const currentPassword = document.querySelector("#currentPassword").value;
+    const newPassword = document.querySelector("#newPassword").value;
+    const confirmPassword = document.querySelector("#confirmPassword").value;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      alert("Please fill in all password fields.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      alert("New password and confirmation do not match.");
+      return;
+    }
+
+    try {
+      const response = await fetchData(
+        `${process.env.REACT_APP_API_URL}/api/user/password/${userId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            oldPassword: currentPassword,
+            newPassword: newPassword,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        let errorMessage = "Failed to change password";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          errorMessage = await response.text() || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      alert("Password changed successfully!");
+      // Optionally, clear the password fields
+      document.querySelector("#currentPassword").value = "";
+      document.querySelector("#newPassword").value = "";
+      document.querySelector("#confirmPassword").value = "";
+
+    } catch (error) {
+      console.error("Error changing password:", error);
+      alert(`Failed to change password: ${error.message}`);
+    }
+  }
+
   // Function to get the image source for preview
   const getImageSrc = () => {
     if (selectedImage && selectedImage instanceof File) {

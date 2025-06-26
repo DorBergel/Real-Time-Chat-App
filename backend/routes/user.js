@@ -45,5 +45,10 @@ router.post(
   userController.editUserProfile
 );
 
+router.put(
+  "/password/:userId",
+    verifyUserAccess,
+    userController.changeUserPassword
+);
 
 module.exports = router;
