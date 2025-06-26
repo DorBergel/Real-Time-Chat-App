@@ -15,15 +15,17 @@ export async function fetchData(url, options = {}) {
   }
 
   const headers = {
+    ...options.headers, // Include headers from options
     ...(contentType && { "Content-Type": contentType }),
     Authorization: `Bearer ${accessToken}`,
   };
 
-  // Prepare the body based on content type
+  // Fix: Don't stringify if body is already a string
   if (
     body &&
     !(body instanceof FormData) &&
-    contentType === "application/json"
+    contentType === "application/json" &&
+    typeof body !== "string"
   ) {
     body = JSON.stringify(body);
   }
