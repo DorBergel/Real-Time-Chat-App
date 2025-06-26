@@ -93,3 +93,58 @@ exports.uploadProfilePicture = async (userId, file) => {
 
   return updatedUser;
 };
+
+exports.editUserProfile = async (userId, userData) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const updatedFields = Object.keys(userData); // Fix this line
+
+  updatedFields.forEach((field) => {
+    if (userData[field] !== undefined) {
+      user[field] = userData[field];
+    }
+  });
+
+  await user.save();
+
+  logDebugMsg(`editUserProfile: userId: ${userId}, updatedFields: ${updatedFields}`);
+
+  // Populate the user document exactly like in getUserDocById
+  const updatedUser = await User.findById(userId)
+    .populate({
+      path: "contacts",
+      model: User,
+      select: "_id username profilePicture status",
+    })
+    .populate({
+      path: "chats",
+      model: Chat,
+      populate: [
+        {
+          path: "participants",
+          model: User,
+          select: "_id username profilePicture",
+        },
+        {
+          path: "lastMessage",
+          model: "Message",
+          populate: {
+            path: "author",
+            model: User,
+            select: "_id username",
+          },
+        },
+      ],
+    });
+
+  logDebugMsg(`editUserProfile: updatedUser: ${updatedUser}`);
+
+  if (!updatedUser) {
+    throw new Error("Updated user not found");
+  }
+
+  return updatedUser;
+};

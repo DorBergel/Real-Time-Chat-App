@@ -33,7 +33,15 @@ exports.getUserDocById = async (req, res) => {
   }
 };
 
-
+/**
+ * @desc    Upload profile picture for a user
+ * @route   POST /api/user/profile-picture/:userId
+ * @access  Private
+ * @param   {string} userId - The ID of the user whose profile picture is to be uploaded
+ * @param   {file} profilePicture - The profile picture file to be uploaded
+ * @returns {object} - The updated user document with the new profile picture URL
+ * @throws  {Error} - If the user is not found, if the file is not provided, or if there is an error during the upload
+ */
 exports.uploadProfilePicture = async (req, res) => {
   logger.logInfoMsg(`${req.ip} is trying to upload profile picture`);
 
@@ -50,6 +58,39 @@ exports.uploadProfilePicture = async (req, res) => {
   try {
     const updatedUserDoc = await userServices.uploadProfilePicture(userId, req.file);
     logger.logInfoMsg(`profile picture uploaded successfully`);
+    return res.status(200).json({ user: updatedUserDoc });
+  } catch (err) {
+    logger.logErrorMsg(`${err}`);
+    return res.status(500).json({ reason: err.message });
+  }
+}
+
+/**
+ * @desc    Edit user profile
+ * @route   PUT /api/user/edit-profile/:userId
+ * @access  Private
+ * @param   {string} userId - The ID of the user whose profile is to be edited
+ * @param   {object} userData - The data to update the user's profile (e.g., username, status)
+ * @returns {object} - The updated user document
+ * @throws  {Error} - If the user is not found, if the required data is not provided, or if there is an error during the update
+ */
+exports.editUserProfile = async (req, res) => {
+  logger.logInfoMsg(`${req.ip} is trying to edit user profile`);
+
+  const { userId } = req.params;
+  const userData = req.body;
+
+  logger.logDebugMsg(`userId: ${userId}, userData: ${userData}`);
+
+  // Verify the required data received
+  if (!userId || !userData) {
+    logger.logErrorMsg(`required data not provided`);
+    return res.status(400).json({ reason: "required data not provided" });
+  }
+
+  try {
+    const updatedUserDoc = await userServices.editUserProfile(userId, userData);
+    logger.logInfoMsg(`user profile edited successfully`);
     return res.status(200).json({ user: updatedUserDoc });
   } catch (err) {
     logger.logErrorMsg(`${err}`);

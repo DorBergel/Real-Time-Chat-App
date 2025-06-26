@@ -10,7 +10,7 @@ import InputGroup from "react-bootstrap/InputGroup";
 import Form from "react-bootstrap/Form";
 import GroupCreationForm from "./Popups/GroupCreationForm";
 import Popup from "./Popup"; // Import the Popup component
-import Settings from "./EditProfile";
+import Settings from "./Popups/EditProfile"; // Import the Settings component
 import { Col, Row } from "react-bootstrap";
 
 const Sidebar = ({
@@ -22,6 +22,7 @@ const Sidebar = ({
   setCurrentChat,
   setChats,
   userDocument,
+  setUserDocument,
 }) => {
   const { socket, registerListener, unregisterListener } = useWebSocket(); // Use the hook to access the context
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
@@ -59,9 +60,18 @@ const Sidebar = ({
       contacts.find((contact) => contact._id === contactId)
     );
     // Check if there is an existing private chat with the contact
-    const existingChat = chats.find(
-      (chat) => chat.participants.includes(contactId) && !chat.isGroup
-    );
+    const existingChat = chats.find((chat => {
+      if (!chat.isGroup) {
+
+        return (
+          chat.participants.length === 2 &&
+          chat.participants.some((p) => p._id === contactId) &&
+          chat.participants.some((p) => p._id === userId)
+        );
+      } else {
+        return false; 
+      }
+    }));
 
     // If an existing chat is found, set it as the current chat
     if (existingChat) {
@@ -323,7 +333,7 @@ const Sidebar = ({
       )}
       {showSettings && (
         <Popup onClose={() => setShowSettings(false)}>
-          <Settings userDocument={userDocument} />
+          <Settings userDocument={userDocument} setUserDocument={setUserDocument} />
         </Popup>
       )}
     </div>

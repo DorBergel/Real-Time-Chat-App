@@ -112,6 +112,16 @@ function AppManager() {
       });
   }, [userId]);
 
+  // Effect to handle just if userDocument is updated
+  useEffect(() => {
+    if (userDocument) {
+      console.log("AppManager - useEffect - User document updated:", userDocument);
+      setUsername(userDocument.username);
+      setUserContacts(userDocument.contacts || []);
+      setUserChats(userDocument.chats || []);
+    }
+  }, [userDocument]);
+
   return (
     <div className="AppManager">
       <div className="toolbar_container">
@@ -123,6 +133,7 @@ function AppManager() {
           currentChat={currentChat}
           setCurrentChat={setCurrentChat}
           userDocument={userDocument}
+          setUserDocument={setUserDocument}
         />
       </div>
       <div className="chat_container">

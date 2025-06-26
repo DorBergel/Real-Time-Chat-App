@@ -31,4 +31,19 @@ router.post(
   userController.uploadProfilePicture
 );
 
+/**
+ * @desc    Edit user profile
+ * @route   PUT /api/user/edit-profile/:userId
+ * @access  Private
+ * @param   {string} userId - The ID of the user whose profile is to be edited
+ * @param   {object} userData - The data to update the user's profile (e.g., username, status)
+ * @returns {object} - The updated user document    
+ */
+router.post(
+  "/edit-profile/:userId",
+  verifyUserAccess,
+  userController.editUserProfile
+);
+
+
 module.exports = router;
