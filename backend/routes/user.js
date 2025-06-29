@@ -4,6 +4,15 @@ const verifyUserAccess = require("../middlewares/verifyUserAccess");
 const upload = require("../middlewares/uploadMiddleware");
 const router = express.Router();
 
+
+
+router.get(
+    "/search",
+    verifyUserAccess,
+    userController.searchUsers
+);
+
+
 /**
  * @desc    Get user document by ID
  * @route   GET /api/user/:userId
@@ -45,10 +54,46 @@ router.post(
   userController.editUserProfile
 );
 
+/**
+ * @desc    Change user password
+ * @route   PUT /api/user/password/:userId
+ * @access  Private
+ * @param   {string} userId - The ID of the user whose password is to be changed
+ * @param   {object} passwordData - The data containing the old and new passwords
+ * @returns {object} - A success message or an error message
+ */
 router.put(
   "/password/:userId",
     verifyUserAccess,
     userController.changeUserPassword
+);
+
+/**
+ * @desc    Delete a contact from the user's contact list
+ * @route   POST /api/user/delete-contact/:userId
+ * @access  Private
+ * @param   {string} userId - The ID of the user whose contact is to be deleted
+ * @returns {object} - A success message or an error message
+ * @throws  {Error} - If the user is not found or if there is an error during deletion
+ */
+router.post(
+    "/delete-contact/:userId",
+    verifyUserAccess,
+    userController.deleteContact
+);
+
+/**
+ * @desc    Add a contact to the user's contact list
+ * @route   POST /api/user/add-contact/:userId
+ * @access  Private
+ * @param   {string} userId - The ID of the user who is adding a contact
+ * @returns {object} - The updated user document with the new contact added
+ * @throws  {Error} - If the user is not found, if the contact already exists, or if there is an error during addition
+ */
+router.post(
+    "/add-contact/:userId",
+    verifyUserAccess,
+    userController.addContact
 );
 
 module.exports = router;

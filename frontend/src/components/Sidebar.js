@@ -29,6 +29,81 @@ const Sidebar = ({
   const [listState, setListState] = useState("Chats");
   const [showGroupCreationForm, setShowGroupCreationForm] = useState(false); // State to toggle the form visibility
   const [showSettings, setShowSettings] = useState(false); // State for settings popup
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Debounce search to avoid too many API calls
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      const timeoutId = setTimeout(() => {
+        handleSearch(searchQuery);
+      }, 500); // Wait 500ms after user stops typing
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
+
+  const handleSearch = async (query) => {
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetchData(
+        `${process.env.REACT_APP_API_URL}/api/user/search?query=${encodeURIComponent(
+          query
+        )}`,
+        {
+          method: "GET",
+        }
+      );
+
+      const data = await response.json();
+
+      // Filter out current user and existing contacts
+      const filteredResults =
+        data.users?.filter(
+          (user) =>
+            user._id !== userId &&
+            !contacts.some((contact) => contact._id === user._id)
+        ) || [];
+
+      setSearchResults(filteredResults);
+    } catch (error) {
+      console.error("Error searching users:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleAddContact = async (contactId) => {
+    try {
+      const response = await fetchData(
+        `${process.env.REACT_APP_API_URL}/api/user/add-contact/${userId}`,
+        {
+          method: "POST",
+          body: JSON.stringify({ contactId }),
+        }
+      );
+
+      const data = await response.json();
+      console.log("Contact added successfully:", data);
+
+      // Update user document with new contact list
+      setUserDocument(data.user);
+
+      // Remove the added user from search results
+      setSearchResults((prev) => prev.filter((user) => user._id !== contactId));
+    } catch (error) {
+      console.error("Error adding contact:", error);
+    }
+  };
 
   const handleChatItemClick = (chatId) => {
     console.log("Sidebar - handleChatItemClick - Chat ID:", chatId);
@@ -54,18 +129,19 @@ const Sidebar = ({
       contacts.find((contact) => contact._id === contactId)
     );
     // Check if there is an existing private chat with the contact
-    const existingChat = chats.find((chat => {
-      if (!chat.isGroup) {
-
-        return (
-          chat.participants.length === 2 &&
-          chat.participants.some((p) => p._id === contactId) &&
-          chat.participants.some((p) => p._id === userId)
-        );
-      } else {
-        return false; 
+    const existingChat = chats.find(
+      (chat) => {
+        if (!chat.isGroup) {
+          return (
+            chat.participants.length === 2 &&
+            chat.participants.some((p) => p._id === contactId) &&
+            chat.participants.some((p) => p._id === userId)
+          );
+        } else {
+          return false;
+        }
       }
-    }));
+    );
 
     // If an existing chat is found, set it as the current chat
     if (existingChat) {
@@ -105,14 +181,6 @@ const Sidebar = ({
     }
   };
 
-  const handleSearchButtonClick = () => {
-    const searchInput = document.getElementById("searchContactInput");
-    console.log(
-      "Sidebar - handleSearchButtonClick - Search Input Value:",
-      searchInput.value
-    );
-  };
-
   // sort chats by last message time
   const sortedChats = [...chats].sort((a, b) => {
     const aTime = new Date(a.lastMessage?.createdAt || 0);
@@ -136,12 +204,35 @@ const Sidebar = ({
     setShowSettings(true);
   };
 
+  const handleRemoveContact = (contactId) => {
+    console.log("Removing contact with ID:", contactId);
+
+    fetchData(
+      `${process.env.REACT_APP_API_URL}/api/user/delete-contact/${userId}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ contactId }),
+      }
+    )
+      .then((response) => {
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Contact removed successfully, data:", data);
+
+        setUserDocument(data.user);
+      })
+      .catch((error) => {
+        console.error("Error removing contact:", error);
+      });
+  };
+
   return (
     <div className="sidebar">
       <div className="sidebar_header">
         <Row>
           <Col lg={3} className="sidebar_header_image">
-          <Image
+            <Image
               src={`${process.env.REACT_APP_API_URL}/uploads/profile-pictures/${
                 userDocument?.profilePicture || "default.jpeg"
               }`}
@@ -153,38 +244,38 @@ const Sidebar = ({
             />
           </Col>
           <Col lg={9} className="sidebar_header_title">
-            <h2>{username ? username: "ERROR"}</h2>
+            <h2>{username ? username : "ERROR"}</h2>
             <p>{userDocument?.status || "No status available"}</p>
           </Col>
         </Row>
         <Row className="sidebar_header_buttons">
           <Col lg={12} className="sidebar_header_buttons">
-          <ButtonGroup className="sidebar_button_group">
-            <ToggleButton
-              id="toggle-chat"
-              type="radio"
-              variant="outline-primary"
-              name="radio"
-              value="1"
-              checked={listState === "Chats"}
-              onChange={() => setListState("Chats")}
-            >
-              Chats
-            </ToggleButton>
-            <ToggleButton
-              id="toggle-contact"
-              type="radio"
-              variant="outline-primary"
-              name="radio"
-              value="2"
-              checked={listState === "Contacts"}
-              onChange={() => setListState("Contacts")}
-            >
-              Contacts
-            </ToggleButton>
-          </ButtonGroup>
+            <ButtonGroup className="sidebar_button_group">
+              <ToggleButton
+                id="toggle-chat"
+                type="radio"
+                variant="outline-primary"
+                name="radio"
+                value="1"
+                checked={listState === "Chats"}
+                onChange={() => setListState("Chats")}
+              >
+                Chats
+              </ToggleButton>
+              <ToggleButton
+                id="toggle-contact"
+                type="radio"
+                variant="outline-primary"
+                name="radio"
+                value="2"
+                checked={listState === "Contacts"}
+                onChange={() => setListState("Contacts")}
+              >
+                Contacts
+              </ToggleButton>
+            </ButtonGroup>
           </Col>
-          </Row>
+        </Row>
       </div>
 
       {listState === "Chats" ? (
@@ -249,55 +340,108 @@ const Sidebar = ({
       ) : (
         <div className="items_list">
           <div className="contact_search">
-          <InputGroup className="mb-3 contact_search">
-      <Form.Control
-        id="searchContactInput"
-        type="text"
-        placeholder={`Search ${listState.toLowerCase()}...`}
-        onKeyPress={(e) => {
-          if (e.key === "Enter") {
-            handleSearchButtonClick();
-          }
-        }}
-      />
-      <Button
-        variant="primary"
-        onClick={handleSearchButtonClick}
-        className="searchContactBtn"
-      >
-        Search
-      </Button>
-    </InputGroup>
+            <InputGroup className="mb-3 contact_search">
+              <Form.Control
+                id="searchContactInput"
+                type="text"
+                placeholder="Search users to add..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter") {
+                    //handleSearchButtonClick();
+                  }
+                }}
+              />
+              
+            </InputGroup>
           </div>
-          {contacts.length > 0 ? (
-            contacts.map((contact) => (
-              <Row
-                key={contact._id}
-                className="contact_item"
-                onClick={() => handleContactItemClick(contact._id)}
-              >
-                <Col lg={3} className="contact_item_image">
-                  <Image
-                    src={`${
-                      process.env.REACT_APP_API_URL
-                    }/uploads/profile-pictures/${
-                      contact.profilePicture || "default.jpeg"
-                    }`}
-                    alt={contact.username}
-                    className="contact-profile-image"
-                    roundedCircle
-                  />
-                </Col>
-                <Col lg={9} className="contact_item_text">
-                  <h3>{contact.username || "Unknown User"}</h3>
-                  <p>{contact.status || "No status available"}</p>
-                </Col>
-                
-              </Row>
-            ))
-          ) : (
-            <p>No contacts available</p>
+
+          {/* Search Results */}
+          {searchQuery.trim().length > 0 && (
+            <div className="search_results">
+              <h5>Search Results:</h5>
+              {isSearching ? (
+                <p>Searching...</p>
+              ) : searchResults.length > 0 ? (
+                searchResults.map((user) => (
+                  <Row key={user._id} className="search_result_item">
+                    <Col lg={3} className="search_result_image">
+                      <Image
+                        src={`${process.env.REACT_APP_API_URL}/uploads/profile-pictures/${
+                          user.profilePicture || "default.jpeg"
+                        }`}
+                        alt={user.username}
+                        className="contact-profile-image"
+                        roundedCircle
+                      />
+                    </Col>
+                    <Col lg={6} className="search_result_text">
+                      <h4>{user.username}</h4>
+                      <p>{user.email}</p>
+                    </Col>
+                    <Col lg={3} className="search_result_action">
+                      <Button
+                        variant="success"
+                        size="sm"
+                        onClick={() => handleAddContact(user._id)}
+                      >
+                        Add
+                      </Button>
+                    </Col>
+                  </Row>
+                ))
+              ) : (
+                <p>No users found</p>
+              )}
+            </div>
           )}
+
+          {/* Existing Contacts */}
+          <div className="existing_contacts">
+            {searchQuery.trim().length === 0 && <h5>Your Contacts:</h5>}
+            {contacts.length > 0 ? (
+              contacts.map((contact) => (
+                <Row
+                  key={contact._id}
+                  className="contact_item"
+                  onClick={() => handleContactItemClick(contact._id)}
+                >
+                  <Col lg={3} className="contact_item_image">
+                    <Image
+                      src={`${
+                        process.env.REACT_APP_API_URL
+                      }/uploads/profile-pictures/${
+                        contact.profilePicture || "default.jpeg"
+                      }`}
+                      alt={contact.username}
+                      className="contact-profile-image"
+                      roundedCircle
+                    />
+                  </Col>
+                  <Col lg={9} className="contact_item_text">
+                    <h3>{contact.username || "Unknown User"}</h3>
+                    <p>{contact.status || "No status available"}</p>
+                  </Col>
+                  {/* add a float button to the side of each contact to remove contact */}
+                  <Col lg={1} className="contact_item_remove">
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent the click from propagating to the Row
+                        handleRemoveContact(contact._id);
+                      }}
+                    >
+                      X
+                    </Button>
+                  </Col>
+                </Row>
+              ))
+            ) : (
+              <p>No contacts available</p>
+            )}
+          </div>
         </div>
       )}
 
@@ -327,7 +471,10 @@ const Sidebar = ({
       )}
       {showSettings && (
         <Popup onClose={() => setShowSettings(false)}>
-          <Settings userDocument={userDocument} setUserDocument={setUserDocument} />
+          <Settings
+            userDocument={userDocument}
+            setUserDocument={setUserDocument}
+          />
         </Popup>
       )}
     </div>
