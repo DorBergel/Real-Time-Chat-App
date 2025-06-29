@@ -1,6 +1,7 @@
 const e = require("express");
 const authServices = require("../services/authService");
 const logger = require("../utils/logger");
+const userValidation = require("../utils/userValidation");
 
 
 /**
@@ -30,6 +31,8 @@ exports.register = async (req, res) => {
     u_email,
     u_password,
     u_birthday,
+    u_profilePicture,
+    u_status
   } = req.body;
 
   logger.logDebugMsg(
@@ -48,6 +51,18 @@ exports.register = async (req, res) => {
     logger.logErrorMsg(`required data not retrieved`);
     return res.status(400).json({ reason: "required data not retrieved" });
   }
+  
+  // Ensure password strong enough
+  if (!userValidation.passwordIsStrong(u_password)) {
+    logger.logErrorMsg(`password is too weak`);
+    return res.status(400).json({ reason: "password is too weak" });
+  }
+
+  // Ensure client is adult
+  if (!userValidation.isAdult(u_birthday)) {
+    logger.logErrorMsg(`user is too young`);
+    return res.status(400).json({ reason: "user is too young" });
+  }
 
   try {
     const newUser = await authServices.registerUser({
@@ -57,6 +72,8 @@ exports.register = async (req, res) => {
       u_email,
       u_password,
       u_birthday,
+      u_profilePicture,
+      u_status,
     });
     logger.logInfoMsg(`user registered successfully`);
     return res.status(200).json({ user: newUser });

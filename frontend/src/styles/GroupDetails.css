@@ -1,0 +1,152 @@
+.group_details_form {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.group_details_header {
+  color: black;
+  padding: 15px 20px;
+  text-align: center;
+}
+
+.group_details_header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 500;
+}
+
+.group_details_content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.group_info_section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: white;
+  border: 1px solid #dee2e6;
+}
+
+.group_image_display img {
+  width: 80px !important;
+  height: 80px !important;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #dee2e6;
+}
+
+.group_basic_info h3 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.group_created_date {
+  margin: 0;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.participants_section h4 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.participants_list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  width: 100%;
+  scrollbar-width:none;
+  -ms-overflow-style: none; 
+}
+
+.participant_item {
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  background: white;
+}
+
+.participant_item:hover {
+  border-color: #adb5bd;
+}
+
+.participant_item .card-body {
+  padding: 10px !important;
+}
+
+.participant_item img {
+  width: 30px !important;
+  height: 30px !important;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1px solid #dee2e6;
+}
+
+.participant_item .card-title {
+  margin: 0 !important;
+  font-size: 0.9rem !important;
+  font-weight: 500;
+  color: #333;
+}
+
+.participant_item .card-text {
+  margin: 2px 0 0 0 !important;
+  font-size: 0.75rem !important;
+  color: #666;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .group_details_form {
+    max-width: 90vw;
+  }
+  
+  .group_info_section {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+  
+  .group_details_content {
+    padding: 15px;
+  }
+}
+
+/* Empty state styling */
+.participants_list p {
+  text-align: center;
+  color: #666;
+  font-size: 0.85rem;
+  padding: 15px;
+  margin: 0;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}

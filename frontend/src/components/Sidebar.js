@@ -247,6 +247,20 @@ const Sidebar = ({
             <h2>{username ? username : "ERROR"}</h2>
             <p>{userDocument?.status || "No status available"}</p>
           </Col>
+          {/* Floating logout button */}
+          <Button
+              variant="secondary"
+              className="logout_button"
+              size="sm"
+              onClick={() => {
+                localStorage.removeItem("access-token");
+                localStorage.removeItem("refresh-token");
+                localStorage.removeItem("user-id");
+                window.location.href = "/"; // Redirect to login page
+              }}
+            >
+              X
+            </Button>
         </Row>
         <Row className="sidebar_header_buttons">
           <Col lg={12} className="sidebar_header_buttons">

@@ -13,6 +13,7 @@
   padding: 10px;
   color: black;
   border-bottom: 1px solid #ccc;
+  position: relative; /* Add this line */
 }
 
 .sidebar_header_image {
@@ -285,4 +286,14 @@
 
 .existing_contacts h5 {
   margin-top: 15px;
+}
+
+.logout_button{
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  width: 30px !important;
+  height: 30px !important;
+  background-color: transparent !important;
+  color: #000 !important;
 }

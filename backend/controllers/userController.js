@@ -1,4 +1,5 @@
 const logger = require("../utils/logger");
+const { isAdult, passwordIsStrong } = require("../utils/userValidation");
 
 const userServices = require("../services/userServices");
 
@@ -116,7 +117,6 @@ exports.editUserProfile = async (req, res) => {
  * @param   {object} body - The data containing the old and new passwords
  * @returns {object} - A success message or an error message
  * @throws  {Error} - If the user is not found, if the old password is incorrect, or if there is an error during the update
- * TODO: Add validation for password strength and format - check what happens in registration logic and consider reusing it
  */
 exports.changeUserPassword = async (req, res) => {
   logger.logInfoMsg(`${req.ip} is trying to change user password`);
@@ -130,6 +130,18 @@ exports.changeUserPassword = async (req, res) => {
   if (!userId || !oldPassword || !newPassword) {
     logger.logErrorMsg(`required data not provided`);
     return res.status(400).json({ reason: "required data not provided" });
+  }
+
+  // Validate the new password strength
+  if (!passwordIsStrong(newPassword)) {
+    logger.logErrorMsg(`new password is too weak`);
+    return res.status(400).json({ reason: "new password is too weak" });
+  }
+
+  // Validate the user is an adult
+  if (!isAdult(req.user.birthday)) {
+    logger.logErrorMsg(`user is too young`);
+    return res.status(400).json({ reason: "user is too young" });
   }
 
   try {
