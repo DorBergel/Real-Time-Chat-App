@@ -30,6 +30,8 @@ exports.register = async (req, res) => {
     u_email,
     u_password,
     u_birthday,
+    u_profilePicture,
+    u_status
   } = req.body;
 
   logger.logDebugMsg(
@@ -57,6 +59,8 @@ exports.register = async (req, res) => {
       u_email,
       u_password,
       u_birthday,
+      u_profilePicture,
+      u_status,
     });
     logger.logInfoMsg(`user registered successfully`);
     return res.status(200).json({ user: newUser });

@@ -49,6 +49,8 @@ exports.registerUser = async ({
   u_email,
   u_password,
   u_birthday,
+  u_profilePicture,
+  u_status,
 }) => {
   // Check if the username already taken or email already used
   const exists = await User.findOne({
@@ -82,6 +84,8 @@ exports.registerUser = async ({
     email: u_email,
     hashed_password: u_hashedPassword,
     birthday: u_birthday,
+    profile_picture: u_profilePicture || null,
+    status: u_status || "Hey there! I am using this app!",
   });
 
   await newUserDocument.save();
