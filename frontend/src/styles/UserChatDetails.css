@@ -1,0 +1,135 @@
+.user_details_form {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.user_details_header {
+  color: black;
+  padding: 15px 20px;
+  text-align: center;
+}
+
+.user_details_header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 500;
+}
+
+.user_details_content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  /* Hide scrollbar for main content */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.user_details_content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+.section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.user_info_section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: white;
+  border: 1px solid #dee2e6;
+}
+
+.user_image_display img {
+  width: 80px !important;
+  height: 80px !important;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #dee2e6;
+}
+
+.user_basic_info h3 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.user_status,
+.user_last_seen {
+  margin: 0 0 4px 0;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.user_contact_section h4 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.contact_info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user_email,
+.user_phone,
+.user_joined {
+  margin: 0;
+  color: #666;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.user_email strong,
+.user_phone strong,
+.user_joined strong {
+  color: #333;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .user_details_form {
+    max-width: 90vw;
+  }
+  
+  .user_info_section {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+  
+  .user_details_content {
+    padding: 15px;
+  }
+}
+
+/* Empty state styling for contact info */
+.contact_info p {
+  transition: background-color 0.2s ease;
+}
+
+.contact_info p:hover {
+  background-color: #f8f9fa;
+}

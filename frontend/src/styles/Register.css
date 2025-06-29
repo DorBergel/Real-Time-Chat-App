@@ -1,0 +1,76 @@
+.Register {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 80%;
+    padding: 20px;
+}
+
+.Register-header {
+    margin-bottom: 30px;
+}
+
+.Register-form {
+    width: 100%;
+    max-width: 800px;
+}
+
+.Register-button {
+    margin-top: 15px;
+}
+
+.Register-footer {
+    margin-top: 20px;
+}
+
+.Register-footer a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.Register-footer a:hover {
+    text-decoration: underline;
+}
+
+.profile_image_section {
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    margin-bottom: 15px;
+}
+
+.image_preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.left-column, .right-column {
+    padding: 15px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .Register {
+        height: auto;
+        min-height: 80%;
+        padding: 15px;
+    }
+    
+    .Register-form {
+        max-width: 100%;
+    }
+    
+    .left-column, .right-column {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 992px) {
+    .Register-form {
+        max-width: 100%;
+    }
+}
