@@ -204,6 +204,16 @@
   transition: background-color 0.3s ease;
 }
 
+.contact_item_remove Button{
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  background-color: transparent !important;
+  color : #dc3545; /* Red color for remove button */
+  
+}
+
 .contact_item:hover {
   background-color: #f1f1f1; /* Hover effect */
 }
@@ -252,4 +262,27 @@
 
 .contact_item_status_time {
   margin-bottom: 5px;
+}
+
+/* Search results styles */
+.search_results {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.search_result_item {
+  padding: 10px;
+  border: 1px solid #eee;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  cursor: default;
+}
+
+.search_result_item:hover {
+  background-color: #f5f5f5;
+}
+
+.existing_contacts h5 {
+  margin-top: 15px;
 }

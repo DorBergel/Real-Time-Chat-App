@@ -206,3 +206,141 @@ exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
 
   return updatedUser;
 }
+
+exports.addContact = async (userId, contactId) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Check if contact already exists in user's contacts
+  if (user.contacts.includes(contactId)) {
+    throw new Error("Contact already exists in user's contacts");
+  }
+
+  // Check if the contact exists in the database
+  const contact = await User.findById(contactId);
+  if (!contact) {
+    throw new Error("Contact not found");
+  }
+
+  // Add contact to user's contacts
+  user.contacts.push(contact._id);
+  await user.save();
+
+  logDebugMsg(`addContact: userId: ${userId}, contactId: ${contactId} added successfully`);
+
+  // Populate the user document exactly like in getUserDocById
+  const updatedUser = await User.findById(userId)
+  .populate({
+    path: "contacts",
+    model: User,
+    select: "_id username profilePicture status",
+  })
+  .populate({
+    path: "chats",
+    model: Chat,
+    populate: [
+      {
+        path: "participants",
+        model: User,
+        select: "_id username profilePicture",
+      },
+      {
+        path: "lastMessage",
+        model: "Message",
+        populate: {
+          path: "author",
+          model: User,
+          select: "_id username",
+        },
+      },
+    ],
+  });
+
+  logDebugMsg(`addContact: updatedUser: ${updatedUser}`);
+  if (!updatedUser) {
+    throw new Error("Updated user not found");
+  }
+
+  return updatedUser;
+};
+
+
+exports.deleteContact = async (userId, contactId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Check if contact exists in user's contacts
+  if (!user.contacts.includes(contactId)) {
+    throw new Error("Contact not found in user's contacts");
+  }
+
+  // Remove contact from user's contacts
+  user.contacts = user.contacts.filter((contact) => contact.toString() !== contactId);
+
+  await user.save();
+
+  logDebugMsg(`deleteContact: userId: ${userId}, contactId: ${contactId} deleted successfully`);
+
+  // Populate the user document exactly like in getUserDocById
+  const updatedUser = await User.findById(userId)
+  .populate({
+    path: "contacts",
+    model: User,
+    select: "_id username profilePicture status",
+  })
+  .populate({
+    path: "chats",
+    model: Chat,
+    populate: [
+      {
+        path: "participants",
+        model: User,
+        select: "_id username profilePicture",
+      },
+      {
+        path: "lastMessage",
+        model: "Message",
+        populate: {
+          path: "author",
+          model: User,
+          select: "_id username",
+        },
+      },
+    ],
+  });
+
+  logDebugMsg(`deleteContact: updatedUser: ${updatedUser}`);
+
+  if (!updatedUser) {
+    throw new Error("Updated user not found");
+  }
+
+  return updatedUser;
+};
+
+exports.searchUsers = async (query) => {
+  if (!query) {
+    throw new Error("Search query is required");
+  }
+
+  // Use a regex to perform a case-insensitive search
+  const regex = new RegExp(query, "i");
+
+  const users = await User.find({
+    $or: [
+      { username: regex },
+      { first_name: regex },
+      { last_name: regex },
+    ],
+  })
+  .select("_id username profilePicture status");
+
+  logDebugMsg(`searchUsers: query: ${query}, found users: ${users}`);
+
+  return users;
+};

@@ -141,3 +141,74 @@ exports.changeUserPassword = async (req, res) => {
     return res.status(500).json({ reason: err.message });
   }
 }
+
+exports.addContact = async (req, res) => {
+  logger.logInfoMsg(`${req.ip} is trying to add contact`);
+
+  const { userId } = req.params;
+  const { contactId } = req.body;
+
+  logger.logDebugMsg(`userId: ${userId}, contactId: ${contactId}`);
+
+  // Verify the required data received
+  if (!userId || !contactId) {
+    logger.logErrorMsg(`required data not provided`);
+    return res.status(400).json({ reason: "required data not provided" });
+  }
+
+  try {
+    const updatedUserDoc = await userServices.addContact(userId, contactId);
+    logger.logInfoMsg(`contact added successfully`);
+    return res.status(200).json({ user: updatedUserDoc });
+  } catch (err) {
+    logger.logErrorMsg(`${err}`);
+    return res.status(500).json({ reason: err.message });
+  }
+}
+
+exports.deleteContact = async (req, res) => {
+  logger.logInfoMsg(`${req.ip} is trying to delete contact`);
+
+  const { userId } = req.params;
+  const { contactId } = req.body;
+
+  logger.logDebugMsg(`userId: ${userId}, contactId: ${contactId}`);
+
+  // Verify the required data received
+  if (!userId || !contactId) {
+    logger.logErrorMsg(`required data not provided`);
+    return res.status(400).json({ reason: "required data not provided" });
+  }
+
+  try {
+    const updatedUserDoc = await userServices.deleteContact(userId, contactId);
+    logger.logInfoMsg(`contact deleted successfully`);
+    return res.status(200).json({ user: updatedUserDoc });
+  } catch (err) {
+    logger.logErrorMsg(`${err}`);
+    return res.status(500).json({ reason: err.message });
+  }
+}
+
+exports.searchUsers = async (req, res) => {
+  logger.logInfoMsg(`${req.ip} is trying to search users`);
+
+  const { query } = req.query;
+
+  logger.logDebugMsg(`query: ${query}`);
+
+  // Verify the required data received
+  if (!query) {
+    logger.logErrorMsg(`required data not provided`);
+    return res.status(400).json({ reason: "required data not provided" });
+  }
+
+  try {
+    const users = await userServices.searchUsers(query);
+    logger.logInfoMsg(`users searched successfully`);
+    return res.status(200).json({ users });
+  } catch (err) {
+    logger.logErrorMsg(`${err}`);
+    return res.status(500).json({ reason: err.message });
+  }
+}
