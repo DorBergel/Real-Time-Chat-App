@@ -1,5 +1,5 @@
 const { model } = require("mongoose");
-const {bcrypt} = require("bcrypt");
+const { bcrypt } = require("bcrypt");
 const { path } = require("../app");
 const Chat = require("../models/Chat");
 const User = require("../models/User");
@@ -57,34 +57,37 @@ exports.uploadProfilePicture = async (userId, file) => {
   user.profilePicture = `${file.filename}`;
   await user.save();
 
-  logDebugMsg(`uploadProfilePicture: userId: ${userId}, profilePicture: ${user.profilePicture}`);
+  logDebugMsg(
+    `uploadProfilePicture: userId: ${userId}, profilePicture: ${user.profilePicture}`
+  );
 
   // populate the user document exactly like in getUserDocById
-  const updatedUser = await User.findById(userId).populate({
-    path: "contacts",
-    model: User,
-    select: "_id username profilePicture status",
-  })
-  .populate({
-    path: "chats",
-    model: Chat,
-    populate: [
-      {
-        path: "participants",
-        model: User,
-        select: "_id username profilePicture",
-      },
-      {
-        path: "lastMessage",
-        model: "Message",
-        populate: {
-          path: "author",
+  const updatedUser = await User.findById(userId)
+    .populate({
+      path: "contacts",
+      model: User,
+      select: "_id username profilePicture status",
+    })
+    .populate({
+      path: "chats",
+      model: Chat,
+      populate: [
+        {
+          path: "participants",
           model: User,
-          select: "_id username",
+          select: "_id username profilePicture",
         },
-      },
-    ],
-  });
+        {
+          path: "lastMessage",
+          model: "Message",
+          populate: {
+            path: "author",
+            model: User,
+            select: "_id username",
+          },
+        },
+      ],
+    });
 
   logDebugMsg(`uploadProfilePicture: updatedUser: ${updatedUser}`);
 
@@ -111,7 +114,9 @@ exports.editUserProfile = async (userId, userData) => {
 
   await user.save();
 
-  logDebugMsg(`editUserProfile: userId: ${userId}, updatedFields: ${updatedFields}`);
+  logDebugMsg(
+    `editUserProfile: userId: ${userId}, updatedFields: ${updatedFields}`
+  );
 
   // Populate the user document exactly like in getUserDocById
   const updatedUser = await User.findById(userId)
@@ -162,42 +167,44 @@ exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
   if (!isMatch) {
     throw new Error("Old password is incorrect");
   }
-  
+
   // Hash the new password
   const hashedNewPassword = await bcrypt.hash(newPassword, 10);
   user.hashed_password = hashedNewPassword;
   await user.save();
 
-  logDebugMsg(`changeUserPassword: userId: ${userId}, password changed successfully`);
+  logDebugMsg(
+    `changeUserPassword: userId: ${userId}, password changed successfully`
+  );
 
   // Populate the user document exactly like in getUserDocById
   const updatedUser = await User.findById(userId)
-  .populate({
-    path: "contacts",
-    model: User,
-    select: "_id username profilePicture status",
-  })
-  .populate({
-    path: "chats",
-    model: Chat,
-    populate: [
-      {
-        path: "participants",
-        model: User,
-        select: "_id username profilePicture",
-      },
-      {
-        path: "lastMessage",
-        model: "Message",
-        populate: {
-          path: "author",
+    .populate({
+      path: "contacts",
+      model: User,
+      select: "_id username profilePicture status",
+    })
+    .populate({
+      path: "chats",
+      model: Chat,
+      populate: [
+        {
+          path: "participants",
           model: User,
-          select: "_id username",
+          select: "_id username profilePicture",
         },
-      },
-    ],
-  });
-    
+        {
+          path: "lastMessage",
+          model: "Message",
+          populate: {
+            path: "author",
+            model: User,
+            select: "_id username",
+          },
+        },
+      ],
+    });
+
   logDebugMsg(`changeUserPassword: updatedUser: ${updatedUser}`);
 
   if (!updatedUser) {
@@ -205,7 +212,7 @@ exports.changeUserPassword = async (userId, oldPassword, newPassword) => {
   }
 
   return updatedUser;
-}
+};
 
 exports.addContact = async (userId, contactId) => {
   const user = await User.findById(userId);
@@ -229,35 +236,37 @@ exports.addContact = async (userId, contactId) => {
   user.contacts.push(contact._id);
   await user.save();
 
-  logDebugMsg(`addContact: userId: ${userId}, contactId: ${contactId} added successfully`);
+  logDebugMsg(
+    `addContact: userId: ${userId}, contactId: ${contactId} added successfully`
+  );
 
   // Populate the user document exactly like in getUserDocById
   const updatedUser = await User.findById(userId)
-  .populate({
-    path: "contacts",
-    model: User,
-    select: "_id username profilePicture status",
-  })
-  .populate({
-    path: "chats",
-    model: Chat,
-    populate: [
-      {
-        path: "participants",
-        model: User,
-        select: "_id username profilePicture",
-      },
-      {
-        path: "lastMessage",
-        model: "Message",
-        populate: {
-          path: "author",
+    .populate({
+      path: "contacts",
+      model: User,
+      select: "_id username profilePicture status",
+    })
+    .populate({
+      path: "chats",
+      model: Chat,
+      populate: [
+        {
+          path: "participants",
           model: User,
-          select: "_id username",
+          select: "_id username profilePicture",
         },
-      },
-    ],
-  });
+        {
+          path: "lastMessage",
+          model: "Message",
+          populate: {
+            path: "author",
+            model: User,
+            select: "_id username",
+          },
+        },
+      ],
+    });
 
   logDebugMsg(`addContact: updatedUser: ${updatedUser}`);
   if (!updatedUser) {
@@ -266,7 +275,6 @@ exports.addContact = async (userId, contactId) => {
 
   return updatedUser;
 };
-
 
 exports.deleteContact = async (userId, contactId) => {
   const user = await User.findById(userId);
@@ -280,39 +288,43 @@ exports.deleteContact = async (userId, contactId) => {
   }
 
   // Remove contact from user's contacts
-  user.contacts = user.contacts.filter((contact) => contact.toString() !== contactId);
+  user.contacts = user.contacts.filter(
+    (contact) => contact.toString() !== contactId
+  );
 
   await user.save();
 
-  logDebugMsg(`deleteContact: userId: ${userId}, contactId: ${contactId} deleted successfully`);
+  logDebugMsg(
+    `deleteContact: userId: ${userId}, contactId: ${contactId} deleted successfully`
+  );
 
   // Populate the user document exactly like in getUserDocById
   const updatedUser = await User.findById(userId)
-  .populate({
-    path: "contacts",
-    model: User,
-    select: "_id username profilePicture status",
-  })
-  .populate({
-    path: "chats",
-    model: Chat,
-    populate: [
-      {
-        path: "participants",
-        model: User,
-        select: "_id username profilePicture",
-      },
-      {
-        path: "lastMessage",
-        model: "Message",
-        populate: {
-          path: "author",
+    .populate({
+      path: "contacts",
+      model: User,
+      select: "_id username profilePicture status",
+    })
+    .populate({
+      path: "chats",
+      model: Chat,
+      populate: [
+        {
+          path: "participants",
           model: User,
-          select: "_id username",
+          select: "_id username profilePicture",
         },
-      },
-    ],
-  });
+        {
+          path: "lastMessage",
+          model: "Message",
+          populate: {
+            path: "author",
+            model: User,
+            select: "_id username",
+          },
+        },
+      ],
+    });
 
   logDebugMsg(`deleteContact: updatedUser: ${updatedUser}`);
 
@@ -332,15 +344,23 @@ exports.searchUsers = async (query) => {
   const regex = new RegExp(query, "i");
 
   const users = await User.find({
-    $or: [
-      { username: regex },
-      { first_name: regex },
-      { last_name: regex },
-    ],
-  })
-  .select("_id username profilePicture status");
+    $or: [{ username: regex }, { first_name: regex }, { last_name: regex }],
+  }).select("_id username profilePicture status");
 
   logDebugMsg(`searchUsers: query: ${query}, found users: ${users}`);
 
   return users;
+};
+
+exports.getContactBasicInfo = async (userId) => {
+  const user = await User.findById(userId).select(
+    "_id username profilePicture status"
+  );
+  if (!user) {
+    throw new Error("User not found");
+  }
+  logDebugMsg(
+    `getContactBasicInfo: userId: ${userId}, contact basic info: ${user}`
+  );
+  return user;
 };

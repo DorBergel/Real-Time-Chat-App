@@ -56,14 +56,17 @@ exports.uploadProfilePicture = async (req, res) => {
   }
 
   try {
-    const updatedUserDoc = await userServices.uploadProfilePicture(userId, req.file);
+    const updatedUserDoc = await userServices.uploadProfilePicture(
+      userId,
+      req.file
+    );
     logger.logInfoMsg(`profile picture uploaded successfully`);
     return res.status(200).json({ user: updatedUserDoc });
   } catch (err) {
     logger.logErrorMsg(`${err}`);
     return res.status(500).json({ reason: err.message });
   }
-}
+};
 
 /**
  * @desc    Edit user profile
@@ -93,7 +96,9 @@ exports.editUserProfile = async (req, res) => {
   for (const field of sensitiveFields) {
     if (userData[field]) {
       logger.logErrorMsg(`sensitive field ${field} cannot be updated`);
-      return res.status(400).json({ reason: `sensitive field ${field} cannot be updated` });
+      return res
+        .status(400)
+        .json({ reason: `sensitive field ${field} cannot be updated` });
     }
   }
 
@@ -105,8 +110,7 @@ exports.editUserProfile = async (req, res) => {
     logger.logErrorMsg(`${err}`);
     return res.status(500).json({ reason: err.message });
   }
-}
-
+};
 
 /**
  * @desc    Change user password
@@ -124,7 +128,9 @@ exports.changeUserPassword = async (req, res) => {
   const { userId } = req.params;
   const { oldPassword, newPassword } = req.body;
 
-  logger.logDebugMsg(`userId: ${userId}, oldPassword: ${oldPassword}, newPassword: ${newPassword}`);
+  logger.logDebugMsg(
+    `userId: ${userId}, oldPassword: ${oldPassword}, newPassword: ${newPassword}`
+  );
 
   // Verify the required data received
   if (!userId || !oldPassword || !newPassword) {
@@ -135,12 +141,14 @@ exports.changeUserPassword = async (req, res) => {
   try {
     await userServices.changeUserPassword(userId, oldPassword, newPassword);
     logger.logInfoMsg(`user password changed successfully`);
-    return res.status(200).json({ message: "User password changed successfully" });
+    return res
+      .status(200)
+      .json({ message: "User password changed successfully" });
   } catch (err) {
     logger.logErrorMsg(`${err}`);
     return res.status(500).json({ reason: err.message });
   }
-}
+};
 
 exports.addContact = async (req, res) => {
   logger.logInfoMsg(`${req.ip} is trying to add contact`);
@@ -164,7 +172,7 @@ exports.addContact = async (req, res) => {
     logger.logErrorMsg(`${err}`);
     return res.status(500).json({ reason: err.message });
   }
-}
+};
 
 exports.deleteContact = async (req, res) => {
   logger.logInfoMsg(`${req.ip} is trying to delete contact`);
@@ -188,7 +196,7 @@ exports.deleteContact = async (req, res) => {
     logger.logErrorMsg(`${err}`);
     return res.status(500).json({ reason: err.message });
   }
-}
+};
 
 exports.searchUsers = async (req, res) => {
   logger.logInfoMsg(`${req.ip} is trying to search users`);
@@ -211,4 +219,27 @@ exports.searchUsers = async (req, res) => {
     logger.logErrorMsg(`${err}`);
     return res.status(500).json({ reason: err.message });
   }
-}
+};
+
+exports.getContactBasicInfo = async (req, res) => {
+  logger.logInfoMsg(`${req.ip} is trying to get contact basic info`);
+
+  const { contactId } = req.params;
+
+  logger.logDebugMsg(`contactId: ${contactId}`);
+
+  // Verify the required data received
+  if (!contactId) {
+    logger.logErrorMsg(`required data not provided`);
+    return res.status(400).json({ reason: "required data not provided" });
+  }
+
+  try {
+    const contactInfo = await userServices.getContactBasicInfo(contactId);
+    logger.logInfoMsg(`contact basic info retrieved successfully`);
+    return res.status(200).json({ contact: contactInfo });
+  } catch (err) {
+    logger.logErrorMsg(`${err}`);
+    return res.status(500).json({ reason: err.message });
+  }
+};
