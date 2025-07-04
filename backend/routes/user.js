@@ -4,14 +4,29 @@ const verifyUserAccess = require("../middlewares/verifyUserAccess");
 const upload = require("../middlewares/uploadMiddleware");
 const router = express.Router();
 
+/**
+ * @desc    Search users by username, first name, or last name
+ * @route   GET /api/user/search
+ * @access  Private
+ * @param   {string} query - The search query to filter users by username, first name, or last name
+ * @returns {object} - An array of user documents that match the search criteria
+ * @throws  {Error} - If the search query is not provided or if there is an error during the search
+ */
+router.get("/search", verifyUserAccess, userController.searchUsers);
 
-
+/**
+ * @desc    Get basic contact information by user ID username, image, status
+ * @route   GET /api/user/contact_basic/:id
+ * @access  Private
+ * @param   {string} id - The ID of the user whose basic contact information is to be retrieved
+ * @returns {object} - The basic contact information of the user (username, profile picture, status)
+ * @throws  {Error} - If the user is not found or if there is an error during retrieval
+ */
 router.get(
-    "/search",
-    verifyUserAccess,
-    userController.searchUsers
+  "/contact_basic/:contactId",
+  verifyUserAccess,
+  userController.getContactBasicInfo
 );
-
 
 /**
  * @desc    Get user document by ID
@@ -22,7 +37,6 @@ router.get(
  * @throws  {Error} - If the user is not found or if there is an error during retrieval
  */
 router.get("/:userId", verifyUserAccess, userController.getUserDocById);
-
 
 /**
  * @desc    Upload profile picture for a user
@@ -46,7 +60,7 @@ router.post(
  * @access  Private
  * @param   {string} userId - The ID of the user whose profile is to be edited
  * @param   {object} userData - The data to update the user's profile (e.g., username, status)
- * @returns {object} - The updated user document    
+ * @returns {object} - The updated user document
  */
 router.post(
   "/edit-profile/:userId",
@@ -64,8 +78,8 @@ router.post(
  */
 router.put(
   "/password/:userId",
-    verifyUserAccess,
-    userController.changeUserPassword
+  verifyUserAccess,
+  userController.changeUserPassword
 );
 
 /**
@@ -77,9 +91,9 @@ router.put(
  * @throws  {Error} - If the user is not found or if there is an error during deletion
  */
 router.post(
-    "/delete-contact/:userId",
-    verifyUserAccess,
-    userController.deleteContact
+  "/delete-contact/:userId",
+  verifyUserAccess,
+  userController.deleteContact
 );
 
 /**
@@ -91,9 +105,9 @@ router.post(
  * @throws  {Error} - If the user is not found, if the contact already exists, or if there is an error during addition
  */
 router.post(
-    "/add-contact/:userId",
-    verifyUserAccess,
-    userController.addContact
+  "/add-contact/:userId",
+  verifyUserAccess,
+  userController.addContact
 );
 
 module.exports = router;

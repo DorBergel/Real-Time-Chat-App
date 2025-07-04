@@ -205,14 +205,13 @@
   transition: background-color 0.3s ease;
 }
 
-.contact_item_remove Button{
+.contact_item_remove Button {
   position: absolute;
   top: 10px;
   right: 10px;
   cursor: pointer;
   background-color: transparent !important;
-  color : #dc3545; /* Red color for remove button */
-  
+  color: #dc3545; /* Red color for remove button */
 }
 
 .contact_item:hover {
@@ -288,7 +287,7 @@
   margin-top: 15px;
 }
 
-.logout_button{
+.logout_button {
   position: absolute !important;
   top: 10px !important;
   right: 10px !important;
@@ -296,4 +295,9 @@
   height: 30px !important;
   background-color: transparent !important;
   color: #000 !important;
+}
+
+.typing-indicator {
+  font-size: 0.8rem;
+  color: #888;
 }

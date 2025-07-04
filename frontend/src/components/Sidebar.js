@@ -55,9 +55,9 @@ const Sidebar = ({
     setIsSearching(true);
     try {
       const response = await fetchData(
-        `${process.env.REACT_APP_API_URL}/api/user/search?query=${encodeURIComponent(
-          query
-        )}`,
+        `${
+          process.env.REACT_APP_API_URL
+        }/api/user/search?query=${encodeURIComponent(query)}`,
         {
           method: "GET",
         }
@@ -129,19 +129,17 @@ const Sidebar = ({
       contacts.find((contact) => contact._id === contactId)
     );
     // Check if there is an existing private chat with the contact
-    const existingChat = chats.find(
-      (chat) => {
-        if (!chat.isGroup) {
-          return (
-            chat.participants.length === 2 &&
-            chat.participants.some((p) => p._id === contactId) &&
-            chat.participants.some((p) => p._id === userId)
-          );
-        } else {
-          return false;
-        }
+    const existingChat = chats.find((chat) => {
+      if (!chat.isGroup) {
+        return (
+          chat.participants.length === 2 &&
+          chat.participants.some((p) => p._id === contactId) &&
+          chat.participants.some((p) => p._id === userId)
+        );
+      } else {
+        return false;
       }
-    );
+    });
 
     // If an existing chat is found, set it as the current chat
     if (existingChat) {
@@ -249,18 +247,18 @@ const Sidebar = ({
           </Col>
           {/* Floating logout button */}
           <Button
-              variant="secondary"
-              className="logout_button"
-              size="sm"
-              onClick={() => {
-                localStorage.removeItem("access-token");
-                localStorage.removeItem("refresh-token");
-                localStorage.removeItem("user-id");
-                window.location.href = "/"; // Redirect to login page
-              }}
-            >
-              X
-            </Button>
+            variant="secondary"
+            className="logout_button"
+            size="sm"
+            onClick={() => {
+              localStorage.removeItem("access-token");
+              localStorage.removeItem("refresh-token");
+              localStorage.removeItem("user-id");
+              window.location.href = "/"; // Redirect to login page
+            }}
+          >
+            X
+          </Button>
         </Row>
         <Row className="sidebar_header_buttons">
           <Col lg={12} className="sidebar_header_buttons">
@@ -329,7 +327,7 @@ const Sidebar = ({
                       : chat.participants.find((p) => p._id !== userId)
                           ?.username || "Unknown User"}
                     {chat.isTyping && (
-                      <span className="typing-indicator">Typing...</span>
+                      <span className="typing-indicator">{"\t"}Typing...</span>
                     )}
                   </h3>
                   <p>{chat.lastMessage?.content || "No messages yet"}</p>
@@ -337,11 +335,14 @@ const Sidebar = ({
                 <Col lg={3} className="chat_item_status">
                   <span className="chat_item_status_time">
                     {chat.lastMessage?.createdAt
-                      ? new Date(chat.lastMessage.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                        })
+                      ? new Date(chat.lastMessage.createdAt).toLocaleTimeString(
+                          [],
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: false,
+                          }
+                        )
                       : "N/A"}
                   </span>
                 </Col>
@@ -367,7 +368,6 @@ const Sidebar = ({
                   }
                 }}
               />
-              
             </InputGroup>
           </div>
 
@@ -382,7 +382,9 @@ const Sidebar = ({
                   <Row key={user._id} className="search_result_item">
                     <Col lg={3} className="search_result_image">
                       <Image
-                        src={`${process.env.REACT_APP_API_URL}/uploads/profile-pictures/${
+                        src={`${
+                          process.env.REACT_APP_API_URL
+                        }/uploads/profile-pictures/${
                           user.profilePicture || "default.jpeg"
                         }`}
                         alt={user.username}
