@@ -1,19 +1,33 @@
 .edit_profile_form {
   overflow: hidden;
+  background-color: var(--main-background);
+  border-radius: 8px;
 }
 
 .label {
   margin-top: 10px;
-  margin-bottom: 2px;
+  margin-bottom: 5px;
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .edit_profile_header {
   margin-bottom: 20px;
+  text-align: center;
+  padding: 15px;
+  background-color: var(--sidebar-bg);
+  border-radius: 8px;
+}
+
+.edit_profile_header h2 {
+  color: var(--primary-accent);
+  margin: 0;
 }
 
 .edit_profile_content {
   overflow-y: auto;
   height: 85%;
+  padding: 10px;
 }
 
 .section {
@@ -21,9 +35,54 @@
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  border: 1px solid black;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  background-color: #f9f9f9;
+  background-color: var(--sidebar-bg);
   margin-bottom: 20px;
+}
+
+.edit_profile_content .form-control {
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background-color: var(--main-background);
+  color: var(--text-primary);
+  transition: border-color 0.2s ease;
+}
+
+.edit_profile_content .form-control:focus {
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 0.2rem rgba(122, 132, 113, 0.25);
+}
+
+.edit_profile_content .btn-primary {
+  background-color: var(--primary-accent) !important;
+  border-color: var(--primary-accent) !important;
+  color: var(--text-on-primary) !important;
+  border-radius: 8px !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.edit_profile_content .btn-primary:hover {
+  background-color: var(--secondary-accent) !important;
+  border-color: var(--secondary-accent) !important;
+}
+
+.edit_profile_content .btn-primary:disabled {
+  background-color: var(--text-muted) !important;
+  border-color: var(--text-muted) !important;
+}
+
+.edit_profile_content .form-text {
+  color: var(--text-muted) !important;
+}
+
+.image_preview {
+  margin-bottom: 15px;
+}
+
+.profile_image_section,
+.user_info_section,
+.user_password_section {
+  width: 100%;
 }

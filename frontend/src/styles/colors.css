@@ -1,0 +1,31 @@
+:root {
+  /* Your Color Palette */
+  --sage-green: #7A8471;
+  --warm-beige: #C4A484;
+  --light-gray: #E8E4E0;
+  --off-white: #F5F5F5;
+  
+  /* WhatsApp-style Usage */
+  --primary-accent: var(--sage-green);
+  --sent-message-bg: var(--sage-green);
+  --received-message-bg: var(--light-gray);
+  --main-background: var(--off-white);
+  --sidebar-bg: var(--light-gray);
+  --online-indicator: var(--sage-green);
+  --secondary-accent: var(--warm-beige);
+  
+  /* Text Colors */
+  --text-primary: #2c3e50;
+  --text-secondary: #6c757d;
+  --text-on-primary: white;
+  --text-muted: #95a5a6;
+  
+  /* Status Colors */
+  --success: var(--sage-green);
+  --warning: var(--warm-beige);
+  --danger: #e74c3c;
+  
+  /* Borders */
+  --border-light: #dee2e6;
+  --border-primary: var(--sage-green);
+}

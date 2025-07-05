@@ -3,7 +3,8 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  background-color: #f8f9fa; /* Light background for better contrast */
+  background-color: var(--sidebar-bg);
+  border-radius: 12px;
 }
 
 /* Sidebar header */
@@ -11,9 +12,10 @@
   display: flex;
   flex-direction: column;
   padding: 10px;
-  color: black;
-  border-bottom: 1px solid #ccc;
-  position: relative; /* Add this line */
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
+  position: relative;
+  background-color: var(--sidebar-bg);
 }
 
 .sidebar_header_image {
@@ -26,12 +28,13 @@
 .sidebar_header_title h2 {
   margin: 0;
   font-size: 1.5rem;
+  color: var(--text-primary);
 }
 
 .sidebar_header_title p {
   margin: 0;
   font-size: 0.9rem;
-  color: black; /* Light text color */
+  color: var(--text-secondary);
 }
 
 .sidebar_header_buttons {
@@ -45,40 +48,82 @@
   padding: 15px 0;
 }
 
+.sidebar_button_group .btn-outline-primary {
+  color: var(--primary-accent);
+  border-color: var(--primary-accent);
+  background-color: transparent;
+}
+
+.sidebar_button_group .btn-outline-primary:hover {
+  background-color: var(--primary-accent);
+  border-color: var(--primary-accent) !important;
+  color: var(--text-muted) !important;
+}
+
+/* Fix for active/checked state */
+.sidebar_button_group .btn-outline-primary:focus,
+.sidebar_button_group .btn-outline-primary:active,
+.sidebar_button_group .btn-outline-primary.active {
+  background-color: var(--primary-accent) !important;
+  border-color: var(--primary-accent) !important;
+  color: var(--text-on-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(122, 132, 113, 0.25) !important;
+}
+
+/* For Bootstrap toggle buttons */
+.sidebar_button_group .btn-check:checked + .btn-outline-primary,
+.sidebar_button_group .btn-outline-primary.show {
+  background-color: var(--primary-accent) !important;
+  border-color: var(--primary-accent) !important;
+  color: var(--text-on-primary) !important;
+}
+
 /* User profile image */
 .user-profile-image {
   width: 50px;
   height: 50px;
   object-fit: cover;
-  border: 2px solid white;
+  border: 2px solid var(--primary-accent);
+  transition: border-color 0.2s ease;
+}
+
+.user-profile-image:hover {
+  border-color: var(--secondary-accent);
 }
 
 /* Items list */
 .items_list {
   flex: 1;
   overflow-y: auto;
-  background-color: #ffffff; /* White background for better readability */
-  position: relative; /* Makes the items relative to this container */
-  padding: 10px; /* Adds padding to ensure items are spaced properly */
+  background-color: var(--main-background);
+  position: relative;
+  padding: 10px;
 }
 
 /* Chat item structure */
 .chat_item {
-  position: relative; /* Ensures proper positioning within the items_list */
+  position: relative;
   display: flex;
   align-items: center;
   padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  margin: 10px 0 !important; /* Explicitly set margin to override conflicting styles */
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  margin: 10px 0 !important;
   cursor: pointer;
-  width: 100%; /* Ensures items take full width of the container */
-  box-sizing: border-box; /* Includes padding and borders in width calculation */
-  transition: background-color 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  background-color: var(--main-background);
 }
 
 .chat_item:hover {
-  background-color: #f1f1f1; /* Hover effect */
+  background-color: var(--warm-beige);
+  border-color: var(--primary-accent);
+}
+
+.chat_item.active {
+  background-color: var(--warm-beige);
+  border-left: 4px solid var(--primary-accent);
 }
 
 /* Chat item image column */
@@ -93,6 +138,7 @@
   height: 40px;
   object-fit: cover;
   border-radius: 50%;
+  border: 2px solid var(--border-light);
 }
 
 /* Chat item text column */
@@ -105,12 +151,13 @@
 .chat_item_text h3 {
   margin: 0;
   font-size: 1rem;
+  color: var(--text-primary);
 }
 
 .chat_item_text p {
   margin: 0;
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 /* Chat item status column */
@@ -120,7 +167,7 @@
   align-items: flex-end;
   justify-content: center;
   font-size: 0.8rem;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .chat_item_status_time {
@@ -129,13 +176,13 @@
 
 /* Unseen and seen items */
 .unseen_item {
-  border-left: 5px solid #dc3545; /* Red border for unseen messages */
+  border-left: 4px solid var(--primary-accent);
+  background-color: rgba(122, 132, 113, 0.1);
   font-weight: bold;
 }
 
-.seen_item {
-  background-color: #d4edda; /* Light green background for seen messages */
-  border-left: 5px solid #28a745; /* Green border */
+.unseen_item .chat_item_text h3 {
+  color: var(--primary-accent);
 }
 
 /* Footer buttons */
@@ -143,23 +190,23 @@
   display: flex;
   justify-content: space-between;
   padding: 10px;
-  background-color: #f8f9fa;
+  background-color: var(--sidebar-bg);
+  border-top: 1px solid var(--border-light);
 }
 
-.create_group_button,
-.settings_button {
+.create_group_button {
   flex: 1;
   padding: 10px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
+  background-color: var(--primary-accent) !important;
+  color: var(--text-on-primary) !important;
+  border: none !important;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
-.create_group_button:hover,
-.settings_button:hover {
-  background-color: #0056b3; /* Darker blue on hover */
+.create_group_button:hover {
+  background-color: var(--secondary-accent) !important;
 }
 
 /* Popup styles */
@@ -192,30 +239,72 @@
 
 /* Contact item structure */
 .contact_item {
-  position: relative; /* Ensures proper positioning within the items_list */
+  position: relative;
   display: flex;
   align-items: center;
   padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  margin: 10px 0 !important; /* Explicitly set margin to override conflicting styles */
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  margin: 10px 0 !important;
   cursor: pointer;
-  width: 100%; /* Ensures items take full width of the container */
-  box-sizing: border-box; /* Includes padding and borders in width calculation */
-  transition: background-color 0.3s ease;
-}
-
-.contact_item_remove Button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  cursor: pointer;
-  background-color: transparent !important;
-  color: #dc3545; /* Red color for remove button */
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  background-color: var(--main-background);
 }
 
 .contact_item:hover {
-  background-color: #f1f1f1; /* Hover effect */
+  background-color: var(--warm-beige);
+  border-color: var(--primary-accent);
+}
+
+.contact_item_remove {
+  margin-left: auto; /* Push to the right */
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background-color: transparent;
+  color: var(--danger);
+  border: none;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.contact_item_remove .btn:hover {
+  background-color: var(--danger) !important;
+  color: var(--text-on-primary) !important;
+}
+
+/* Contact item content (image + text) */
+.contact_item_content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.contact_item_remove {
+  margin-left: auto; /* Push to the right */
+}
+
+.contact_item_remove .btn {
+  background-color: transparent !important;
+  color: var(--danger) !important;
+  border: none !important;
+  font-size: 0.8rem;
+  padding: 4px 8px !important;
+}
+
+.contact_item_remove .btn:hover {
+  background-color: var(--danger) !important;
+  color: var(--text-on-primary) !important;
 }
 
 /* Contact item image column */
@@ -230,6 +319,7 @@
   height: 40px;
   object-fit: cover;
   border-radius: 50%;
+  border: 2px solid var(--border-light);
 }
 
 /* Contact item text column */
@@ -242,12 +332,13 @@
 .contact_item_text h3 {
   margin: 0;
   font-size: 1rem;
+  color: var(--text-primary);
 }
 
 .contact_item_text p {
   margin: 0;
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 /* Contact item status column */
@@ -266,25 +357,45 @@
 
 /* Search results styles */
 .search_results {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border-light);
   padding-bottom: 15px;
   margin-bottom: 15px;
 }
 
+.search_results h5 {
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
 .search_result_item {
   padding: 10px;
-  border: 1px solid #eee;
+  border: 1px solid var(--border-light);
   margin-bottom: 5px;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: default;
+  background-color: var(--main-background);
+  transition: background-color 0.2s ease;
 }
 
 .search_result_item:hover {
-  background-color: #f5f5f5;
+  background-color: var(--warm-beige);
+}
+
+.search_result_text h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.search_result_text p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
 }
 
 .existing_contacts h5 {
   margin-top: 15px;
+  color: var(--text-primary);
 }
 
 .logout_button {
@@ -293,11 +404,40 @@
   right: 10px !important;
   width: 30px !important;
   height: 30px !important;
-  background-color: transparent !important;
-  color: #000 !important;
+  background-color: var(--danger) !important;
+  color: var(--text-on-primary) !important;
+  border: none !important;
+  border-radius: 50% !important;
+  font-size: 0.8rem !important;
+}
+
+.logout_button:hover {
+  background-color: #c82333 !important;
 }
 
 .typing-indicator {
   font-size: 0.8rem;
-  color: #888;
+  color: var(--primary-accent);
+  font-style: italic;
+}
+
+.contact_search .form-control {
+  border-color: var(--border-light);
+  background-color: var(--main-background);
+  color: var(--text-primary);
+}
+
+.contact_search .form-control:focus {
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 0.2rem rgba(122, 132, 113, 0.25);
+}
+
+.search_result_action .btn-success {
+  background-color: var(--success) !important;
+  border-color: var(--success) !important;
+}
+
+.search_result_action .btn-success:hover {
+  background-color: var(--secondary-accent) !important;
+  border-color: var(--secondary-accent) !important;
 }

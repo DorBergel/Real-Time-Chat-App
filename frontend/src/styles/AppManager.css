@@ -4,18 +4,37 @@
   flex-direction: row; /* Arrange children in a row */
   height: 100%; /* Full height of the viewport */
   width: 100%; /* Full width of the viewport */
-  background-color: #f0f0f0; /* Light gray background */ 
+  background-color: var(--main-background); /* Changed to use CSS variable */
+  border: 1px solid var(--border-light); /* Added border */
+  border-radius: 8px; /* Optional: rounded corners */
+  overflow: hidden; /* Ensure content doesn't overflow rounded corners */
 }
-
 
 .toolbar_container {
   width: 30%;
   padding: 10px;
-  border: 1px solid blue;
+  background-color: var(--sidebar-bg); /* Changed to use CSS variable */
+  border-right: 1px solid var(--border-light); /* Changed to use CSS variable */
 }
 
 .chat_container {
   width: 70%;
   padding: 10px;
-  border: 1px solid green;
+  background-color: var(--main-background); /* Changed to use CSS variable */
+  border-left: 1px solid var(--border-light); /* Changed to use CSS variable */
+}
+
+.welcome_message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--text-secondary); /* Changed to use CSS variable */
+}
+
+.welcome_message h1 {
+  color: var(--primary-accent); /* Changed to use CSS variable */
+  margin-bottom: 1rem;
 }

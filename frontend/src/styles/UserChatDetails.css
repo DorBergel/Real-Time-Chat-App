@@ -1,5 +1,5 @@
 .user_details_form {
-  background: white;
+  background: var(--main-background);
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   width: 100%;
@@ -11,36 +11,38 @@
 }
 
 .user_details_header {
-  color: black;
+  color: var(--text-primary);
   padding: 15px 20px;
   text-align: center;
+  background-color: var(--sidebar-bg);
+  border-radius: 8px 8px 0 0;
 }
 
 .user_details_header h2 {
   margin: 0;
   font-size: 1.3rem;
   font-weight: 500;
+  color: var(--primary-accent);
 }
 
 .user_details_content {
   padding: 20px;
   overflow-y: auto;
   flex: 1;
-  /* Hide scrollbar for main content */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .user_details_content::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  display: none;
 }
 
 .section {
   margin-bottom: 20px;
   padding: 15px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
+  background: var(--sidebar-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
 }
 
 .section:last-child {
@@ -51,8 +53,8 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  background: white;
-  border: 1px solid #dee2e6;
+  background: var(--main-background);
+  border: 1px solid var(--border-light);
 }
 
 .user_image_display img {
@@ -60,12 +62,12 @@
   height: 80px !important;
   object-fit: cover;
   border-radius: 50%;
-  border: 2px solid #dee2e6;
+  border: 2px solid var(--primary-accent);
 }
 
 .user_basic_info h3 {
   margin: 0 0 8px 0;
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.2rem;
   font-weight: 500;
 }
@@ -73,13 +75,13 @@
 .user_status,
 .user_last_seen {
   margin: 0 0 4px 0;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.85rem;
 }
 
 .user_contact_section h4 {
   margin: 0 0 12px 0;
-  color: #333;
+  color: var(--primary-accent);
   font-size: 1rem;
   font-weight: 500;
 }
@@ -94,18 +96,25 @@
 .user_phone,
 .user_joined {
   margin: 0;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.85rem;
   padding: 8px 12px;
-  background: white;
-  border-radius: 4px;
-  border: 1px solid #dee2e6;
+  background: var(--main-background);
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  transition: background-color 0.2s ease;
+}
+
+.user_email:hover,
+.user_phone:hover,
+.user_joined:hover {
+  background-color: var(--warm-beige);
 }
 
 .user_email strong,
 .user_phone strong,
 .user_joined strong {
-  color: #333;
+  color: var(--text-primary);
 }
 
 /* Responsive design */
@@ -113,23 +122,14 @@
   .user_details_form {
     max-width: 90vw;
   }
-  
+
   .user_info_section {
     flex-direction: column;
     text-align: center;
     gap: 10px;
   }
-  
+
   .user_details_content {
     padding: 15px;
   }
-}
-
-/* Empty state styling for contact info */
-.contact_info p {
-  transition: background-color 0.2s ease;
-}
-
-.contact_info p:hover {
-  background-color: #f8f9fa;
 }
