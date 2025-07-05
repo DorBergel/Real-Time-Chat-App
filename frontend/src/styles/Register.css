@@ -1,76 +1,136 @@
 .Register {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 80%;
-    padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 80%;
+  padding: 20px;
+  background-color: var(--main-background);
 }
 
 .Register-header {
-    margin-bottom: 30px;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.Register-header h1 {
+  color: var(--primary-accent);
+  margin-bottom: 0.5rem;
+}
+
+.Register-header p {
+  color: var(--text-secondary);
 }
 
 .Register-form {
-    width: 100%;
-    max-width: 800px;
+  width: 100%;
+  max-width: 800px;
+  padding: 2rem;
+  background-color: var(--sidebar-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.Register-form .form-label {
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.Register-form .form-control {
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 12px;
+  background-color: var(--main-background);
+  color: var(--text-primary);
+  transition: border-color 0.2s ease;
+}
+
+.Register-form .form-control:focus {
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 0.2rem rgba(122, 132, 113, 0.25);
 }
 
 .Register-button {
-    margin-top: 15px;
+  background-color: var(--primary-accent) !important;
+  border-color: var(--primary-accent) !important;
+  color: var(--text-on-primary) !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  transition: background-color 0.2s ease !important;
+  margin-top: 15px;
+}
+
+.Register-button:hover {
+  background-color: var(--secondary-accent) !important;
+  border-color: var(--secondary-accent) !important;
 }
 
 .Register-footer {
-    margin-top: 20px;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.Register-footer p {
+  color: var(--text-secondary);
 }
 
 .Register-footer a {
-    color: #007bff;
-    text-decoration: none;
+  color: var(--primary-accent);
+  text-decoration: none;
+  font-weight: 500;
 }
 
 .Register-footer a:hover {
-    text-decoration: underline;
+  color: var(--secondary-accent);
+  text-decoration: underline;
 }
 
 .profile_image_section {
-    padding: 15px;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-    margin-bottom: 15px;
+  padding: 15px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background-color: var(--main-background);
+  margin-bottom: 15px;
 }
 
 .image_preview {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 15px;
 }
 
-.left-column, .right-column {
-    padding: 15px;
+.left-column,
+.right-column {
+  padding: 15px;
+}
+
+.form-text {
+  color: var(--text-muted) !important;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .Register {
-        height: auto;
-        min-height: 80%;
-        padding: 15px;
-    }
-    
-    .Register-form {
-        max-width: 100%;
-    }
-    
-    .left-column, .right-column {
-        padding: 10px;
-    }
+  .Register {
+    height: auto;
+    min-height: 80%;
+    padding: 15px;
+  }
+
+  .Register-form {
+    max-width: 100%;
+  }
+
+  .left-column,
+  .right-column {
+    padding: 10px;
+  }
 }
 
 @media (max-width: 992px) {
-    .Register-form {
-        max-width: 100%;
-    }
+  .Register-form {
+    max-width: 100%;
+  }
 }

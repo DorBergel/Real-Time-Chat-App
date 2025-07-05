@@ -1,13 +1,14 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import AppManager from './components/AppManager';
-import Login from './components/Login';
-import Register from './components/Register';
-import './App.css';
-import { WebSocketProvider } from './WebSocketContext'; // Import WebSocket context
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import AppManager from "./components/AppManager";
+import Login from "./components/Login";
+import Register from "./components/Register";
+import "./App.css";
+import { WebSocketProvider } from "./WebSocketContext"; // Import WebSocket context
+import "./styles/colors.css";
 
 function App() {
-  const accessToken = localStorage.getItem('access-token');
+  const accessToken = localStorage.getItem("access-token");
 
   return (
     <div className="App">

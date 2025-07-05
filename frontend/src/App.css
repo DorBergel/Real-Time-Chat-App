@@ -1,21 +1,20 @@
 .App {
-    position: relative; /* This is the main container for the app */
-    display: flex; /* Use flexbox for layout */
-    flex-direction: row; /* Arrange children in a row */
-    height: 80vh; /* Full height of the viewport */
-    width: 80vw; /* Full width of the viewport */
-    background-color: #f0f0f0; /* Light gray background */
-    border: 1px solid black; /* Light gray border */
-    
-    margin: auto; /* Center the app horizontally */
-    top: 10vh; /* Center the app vertically */
-    
-    border-radius: 10px; /* Rounded corners */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow effect */
+  position: relative; /* This is the main container for the app */
+  display: flex; /* Use flexbox for layout */
+  flex-direction: row; /* Arrange children in a row */
+  height: 80vh; /* Full height of the viewport */
+  width: 80vw; /* Full width of the viewport */
+  background-color: var(--main-background); /* Updated */
+  border: 1px solid var(--border-light); /* Updated */
 
-    align-items: center; /* Center items vertically */
-    justify-content: center; /* Center items horizontally */
+  margin: auto; /* Center the app horizontally */
+  top: 10vh; /* Center the app vertically */
 
-    padding: 1px;
-  }
-  
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow effect */
+
+  align-items: center; /* Center items vertically */
+  justify-content: center; /* Center items horizontally */
+
+  padding: 1px;
+}

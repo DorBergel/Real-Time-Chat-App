@@ -1,7 +1,87 @@
 .Login {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 80%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 80%;
+  padding: 2rem;
+  background-color: var(--main-background);
+}
+
+.Login-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.Login-header h1 {
+  color: var(--primary-accent);
+  margin-bottom: 0.5rem;
+}
+
+.Login-header p {
+  color: var(--text-secondary);
+}
+
+.Login-form {
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  background-color: var(--sidebar-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.Login-form .form-label {
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.Login-form .form-control {
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 12px;
+  background-color: var(--main-background);
+  color: var(--text-primary);
+  transition: border-color 0.2s ease;
+}
+
+.Login-form .form-control:focus {
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 0.2rem rgba(122, 132, 113, 0.25);
+}
+
+.Login-button {
+  background-color: var(--primary-accent) !important;
+  border-color: var(--primary-accent) !important;
+  color: var(--text-on-primary) !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.Login-button:hover {
+  background-color: var(--secondary-accent) !important;
+  border-color: var(--secondary-accent) !important;
+}
+
+.Login-footer {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.Login-footer p {
+  color: var(--text-secondary);
+}
+
+.Login-footer a {
+  color: var(--primary-accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.Login-footer a:hover {
+  color: var(--secondary-accent);
+  text-decoration: underline;
 }
