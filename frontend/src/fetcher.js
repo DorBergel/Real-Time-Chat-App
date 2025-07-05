@@ -67,7 +67,7 @@ export async function fetchData(url, options = {}) {
       console.error("Failed to refresh token:", refreshResponse.statusText);
       localStorage.removeItem("access-token");
       localStorage.removeItem("refresh-token");
-      window.location.href = "/login";
+      window.location.href = "/";
     }
   }
 
