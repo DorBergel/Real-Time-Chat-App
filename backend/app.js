@@ -1,7 +1,7 @@
 require("dotenv").config({ path: "./config/.env" });
 var createError = require("http-errors");
 const express = require("express");
-const morgan = require("morgan"); // Import Morgan for HTTP logging
+const morgan = require("morgan");
 const cors = require("cors");
 const path = require("path");
 const cookieParser = require("cookie-parser");
@@ -17,7 +17,7 @@ app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "jade");
 
 // Middleware
-app.use(morgan("dev")); // Use Morgan for HTTP request logging
+app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(

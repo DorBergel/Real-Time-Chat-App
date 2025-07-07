@@ -1,8 +1,8 @@
+#!/usr/bin/env node
+
 var app = require("../app");
 var debug = require("debug")("backend:server");
 var http = require("http");
-var socketIo = require("socket.io");
-const { initializeChatWebSocket } = require("../sockets/chatSocket");
 
 console.log("Starting server initialization...");
 console.log("Environment variables:");
@@ -20,8 +20,9 @@ console.log(`Normalized port: ${port}`);
 var server = http.createServer(app);
 console.log("HTTP server created");
 
-// Initialize WebSocket
+// Initialize WebSocket if needed
 try {
+  const { initializeChatWebSocket } = require("../sockets/chatSocket");
   initializeChatWebSocket(server);
   console.log("Chat WebSocket initialized successfully");
 } catch (error) {
@@ -30,9 +31,12 @@ try {
 
 // Listen on provided port
 console.log(`Attempting to start server on port ${port}...`);
-server.listen(port);
+server.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+  console.log(`Server ready at: http://localhost:${port}`);
+});
+
 server.on("error", onError);
-server.on("listening", () => onListening("API & WebSocket", port));
 
 function normalizePort(val) {
   console.log(`Normalizing port value: ${val}`);
@@ -74,13 +78,4 @@ function onError(error) {
     default:
       throw error;
   }
-}
-
-function onListening(serverType, port) {
-  var addr = server.address();
-  var bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
-
-  console.log(`${serverType} server listening on ${bind}`);
-  console.log(`Server ready at: http://localhost:${addr.port}`);
-  debug(`${serverType} server listening on ${bind}`);
 }
