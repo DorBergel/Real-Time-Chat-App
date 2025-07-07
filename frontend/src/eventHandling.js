@@ -9,14 +9,14 @@
  * @param {*} setMessages
  * @param {*} currentChat
  */
-exports.handleNewMessageReceived = (
+export function handleNewMessageReceived(
   message,
   userChats,
   setUserChats,
   messages,
   setMessages,
   currentChat
-) => {
+) {
   console.log("New message received:", message.load.message);
 
   // Find the chat that the message belongs to
@@ -60,7 +60,7 @@ exports.handleNewMessageReceived = (
       console.warn("Invalid chat object received:", message.load.chat);
     }
   }
-};
+}
 
 /**
  * This function handles the new chat created event.
@@ -72,13 +72,13 @@ exports.handleNewMessageReceived = (
  * @param {*} currentChat
  * @param {*} setCurrentChat
  */
-exports.handleNewChatCreated = (
+export function handleNewChatCreated(
   message,
   userChats,
   setUserChats,
   currentChat,
   setCurrentChat
-) => {
+) {
   console.log("New chat created:", message.load.chat);
 
   // Check if the chat already exists in userChats
@@ -99,7 +99,7 @@ exports.handleNewChatCreated = (
     setCurrentChat(message.load.chat);
     console.log("Setting new chat as current chat:", message.load.chat);
   }
-};
+}
 
 /**
  * This function handles the seen event received.
@@ -115,7 +115,7 @@ exports.handleNewChatCreated = (
  * @param {*} currentChat
  * @param {*} setCurrentChat
  */
-exports.handleSeenEventReceived = (
+export function handleSeenEventReceived(
   message,
   userChats,
   setUserChats,
@@ -123,7 +123,7 @@ exports.handleSeenEventReceived = (
   setMessages,
   currentChat,
   setCurrentChat
-) => {
+) {
   console.log("Seen event received:", message.load);
 
   const { chatId, messagesId } = message.load;
@@ -162,7 +162,7 @@ exports.handleSeenEventReceived = (
       return msg;
     })
   );
-};
+}
 
 /**
  * This function handles the typing event received.
@@ -177,7 +177,7 @@ exports.handleSeenEventReceived = (
  * @param {*} currentChat
  * @param {*} setCurrentChat
  */
-exports.handleTypingEventReceived = (
+export function handleTypingEventReceived(
   message,
   userChats,
   setUserChats,
@@ -185,7 +185,7 @@ exports.handleTypingEventReceived = (
   setMessages,
   currentChat,
   setCurrentChat
-) => {
+) {
   console.log("Typing event received:", message.load);
 
   const { chatId } = message.load;
@@ -240,15 +240,15 @@ exports.handleTypingEventReceived = (
       message.load
     );
   }
-};
+}
 
-exports.handleNewGroupChatCreated = (
+export function handleNewGroupChatCreated(
   message,
   userChats,
   setUserChats,
   currentChat,
   setCurrentChat
-) => {
+) {
   console.log("New group chat created:", message.load.chat);
 
   setUserChats((prevChats) => {
@@ -257,4 +257,4 @@ exports.handleNewGroupChatCreated = (
     );
     return [...uniqueChats, message.load.chat];
   });
-};
+}

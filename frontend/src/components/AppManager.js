@@ -10,7 +10,7 @@ import {
   handleNewMessageReceived,
   handleSeenEventReceived,
   handleTypingEventReceived,
-} from "../eventHandeling";
+} from "../eventHandling";
 
 function AppManager() {
   const userId = localStorage.getItem("user-id"); // Get user ID from local storage
@@ -115,7 +115,10 @@ function AppManager() {
   // Effect to handle just if userDocument is updated
   useEffect(() => {
     if (userDocument) {
-      console.log("AppManager - useEffect - User document updated:", userDocument);
+      console.log(
+        "AppManager - useEffect - User document updated:",
+        userDocument
+      );
       setUsername(userDocument.username);
       setUserContacts(userDocument.contacts || []);
       setUserChats(userDocument.chats || []);
