@@ -36,7 +36,7 @@ app.use("/api/message", require("./routes/message"));
 initializeChatWebSocket(server);
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3025;
 server.listen(PORT, (error) => {
   if (!error) {
     logger.logInfoMsg(`Server is running on port ${PORT}`);
