@@ -8,64 +8,69 @@ var app = require("../app");
 var debug = require("debug")("backend:server");
 var http = require("http");
 var socketIo = require("socket.io");
+const { initializeChatWebSocket } = require("../sockets/chatSocket");
+
+console.log("🚀 Starting server initialization...");
+console.log("📊 Environment variables:");
+console.log(`  - NODE_ENV: ${process.env.NODE_ENV || "development"}`);
+console.log(`  - PORT: ${process.env.PORT || "not set"}`);
+console.log(`  - FRONTEND_URL: ${process.env.FRONTEND_URL || "not set"}`);
 
 /**
- * Get ports from environment and store in Express.
+ * Get port from environment and store in Express.
  */
 
-var apiPort = normalizePort(process.env.API_PORT || "3025");
-var wsPort = normalizePort(process.env.WEBSOCKET_PORT || "3026");
-app.set("port", apiPort);
+var port = normalizePort(process.env.PORT || "3025");
+app.set("port", port);
+
+console.log(`🔧 Normalized port: ${port}`);
 
 /**
- * Create HTTP servers.
+ * Create HTTP server.
  */
 
-var apiServer = http.createServer(app);
-var wsServer = http.createServer();
+var server = http.createServer(app);
+console.log("📡 HTTP server created");
 
 /**
- * Setup Socket.IO on WebSocket server
+ * Initialize WebSocket
  */
-var io = socketIo(wsServer, {
-  cors: {
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-  },
-});
 
-// Import and setup socket handlers
-require("../sockets/chatSocket")(io);
+try {
+  initializeChatWebSocket(server);
+  console.log("💬 Chat WebSocket initialized successfully");
+} catch (error) {
+  console.error("❌ Error initializing WebSocket:", error.message);
+}
 
 /**
- * Listen on provided ports, on all network interfaces.
+ * Listen on provided port, on all network interfaces.
  */
 
-apiServer.listen(apiPort);
-apiServer.on("error", onError);
-apiServer.on("listening", () => onListening("API", apiPort));
-
-wsServer.listen(wsPort);
-wsServer.on("error", onError);
-wsServer.on("listening", () => onListening("WebSocket", wsPort));
+console.log(`🎯 Attempting to start server on port ${port}...`);
+server.listen(port);
+server.on("error", onError);
+server.on("listening", () => onListening("API & WebSocket", port));
 
 /**
  * Normalize a port into a number, string, or false.
  */
 
 function normalizePort(val) {
+  console.log(`🔄 Normalizing port value: ${val}`);
   var port = parseInt(val, 10);
 
   if (isNaN(port)) {
-    // named pipe
+    console.log("📍 Using named pipe:", val);
     return val;
   }
 
   if (port >= 0) {
-    // port number
+    console.log("🔢 Using port number:", port);
     return port;
   }
 
+  console.log("⚠️  Invalid port value, returning false");
   return false;
 }
 
@@ -74,20 +79,24 @@ function normalizePort(val) {
  */
 
 function onError(error) {
+  console.error("❌ Server error occurred:", error);
+
   if (error.syscall !== "listen") {
     throw error;
   }
 
   var bind = typeof port === "string" ? "Pipe " + port : "Port " + port;
 
+  console.error(`🚨 Error binding to ${bind}`);
+
   // handle specific listen errors with friendly messages
   switch (error.code) {
     case "EACCES":
-      console.error(bind + " requires elevated privileges");
+      console.error(`🔐 ${bind} requires elevated privileges`);
       process.exit(1);
       break;
     case "EADDRINUSE":
-      console.error(bind + " is already in use");
+      console.error(`🔒 ${bind} is already in use`);
       process.exit(1);
       break;
     default:
@@ -100,7 +109,10 @@ function onError(error) {
  */
 
 function onListening(serverType, port) {
-  var bind = typeof port === "string" ? "pipe " + port : "port " + port;
-  console.log(`${serverType} server listening on ${bind}`);
+  var addr = server.address();
+  var bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
+
+  console.log(`✅ ${serverType} server listening on ${bind}`);
+  console.log(`🌐 Server ready at: http://localhost:${addr.port}`);
   debug(`${serverType} server listening on ${bind}`);
 }
