@@ -1,65 +1,49 @@
 .Register {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  justify-content: flex-start;
+  height: 100%; /* Ensure it fits within the parent container */
   padding: 20px;
   background-color: var(--main-background);
+  box-sizing: border-box;
+  overflow: hidden; /* Prevent content from overflowing */
 }
 
 .Register-header {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   text-align: center;
 }
 
 .Register-header h1 {
   color: var(--primary-accent);
-  margin-bottom: 0.5rem;
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 600;
 }
 
 .Register-header p {
   color: var(--text-secondary);
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .Register-form {
   width: 100%;
   max-width: 900px;
-  padding: 2.5rem;
+  height: 100%; /* Make the form fill the available space */
+  padding: 20px;
   background-color: var(--sidebar-bg);
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border-light);
+  overflow-y: auto; /* Enable scrolling for overflowing content */
+  box-sizing: border-box;
 }
 
-.Register-form .form-label {
-  color: var(--text-primary);
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  font-size: 0.95rem;
-}
-
-.Register-form .form-control {
-  border: 2px solid var(--border-light);
-  border-radius: 10px;
-  padding: 12px 16px;
-  background-color: var(--main-background);
-  color: var(--text-primary);
-  transition: all 0.3s ease;
-  font-size: 1rem;
-}
-
-.Register-form .form-control:focus {
-  border-color: var(--primary-accent);
-  box-shadow: 0 0 0 0.2rem rgba(122, 132, 113, 0.15);
-  background-color: #fff;
-}
-
-.Register-form .form-control:hover {
-  border-color: var(--secondary-accent);
+.register-form-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Ensure the container fills the form */
+  overflow-y: auto; /* Allow scrolling within the container */
 }
 
 .Register-button {
@@ -83,25 +67,20 @@
 }
 
 .Register-footer {
-  margin-top: 30px;
+  margin-top: 20px;
   text-align: center;
 }
 
 .Register-footer p {
   color: var(--text-secondary);
-  font-size: 1rem;
-  margin: 0;
 }
 
 .Register-footer a {
   color: var(--primary-accent);
   text-decoration: none;
-  font-weight: 600;
-  transition: color 0.3s ease;
 }
 
 .Register-footer a:hover {
-  color: var(--secondary-accent);
   text-decoration: underline;
 }
 
