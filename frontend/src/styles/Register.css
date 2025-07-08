@@ -3,7 +3,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 80%;
+  min-height: 100vh;
   padding: 20px;
   background-color: var(--main-background);
 }
@@ -16,70 +16,88 @@
 .Register-header h1 {
   color: var(--primary-accent);
   margin-bottom: 0.5rem;
+  font-size: 2.5rem;
+  font-weight: 600;
 }
 
 .Register-header p {
   color: var(--text-secondary);
+  font-size: 1.1rem;
 }
 
 .Register-form {
   width: 100%;
-  max-width: 800px;
-  padding: 2rem;
+  max-width: 900px;
+  padding: 2.5rem;
   background-color: var(--sidebar-bg);
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-light);
 }
 
 .Register-form .form-label {
   color: var(--text-primary);
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 0.5rem;
+  font-size: 0.95rem;
 }
 
 .Register-form .form-control {
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  padding: 12px;
+  border: 2px solid var(--border-light);
+  border-radius: 10px;
+  padding: 12px 16px;
   background-color: var(--main-background);
   color: var(--text-primary);
-  transition: border-color 0.2s ease;
+  transition: all 0.3s ease;
+  font-size: 1rem;
 }
 
 .Register-form .form-control:focus {
   border-color: var(--primary-accent);
-  box-shadow: 0 0 0 0.2rem rgba(122, 132, 113, 0.25);
+  box-shadow: 0 0 0 0.2rem rgba(122, 132, 113, 0.15);
+  background-color: #fff;
+}
+
+.Register-form .form-control:hover {
+  border-color: var(--secondary-accent);
 }
 
 .Register-button {
   background-color: var(--primary-accent) !important;
   border-color: var(--primary-accent) !important;
   color: var(--text-on-primary) !important;
-  padding: 12px !important;
-  border-radius: 8px !important;
-  font-weight: 500 !important;
-  transition: background-color 0.2s ease !important;
-  margin-top: 15px;
+  padding: 15px !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 1.1rem !important;
+  transition: all 0.3s ease !important;
+  margin-top: 20px;
+  box-shadow: 0 4px 12px rgba(122, 132, 113, 0.3);
 }
 
 .Register-button:hover {
   background-color: var(--secondary-accent) !important;
   border-color: var(--secondary-accent) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(122, 132, 113, 0.4);
 }
 
 .Register-footer {
-  margin-top: 20px;
+  margin-top: 30px;
   text-align: center;
 }
 
 .Register-footer p {
   color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
 }
 
 .Register-footer a {
   color: var(--primary-accent);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
+  transition: color 0.3s ease;
 }
 
 .Register-footer a:hover {
@@ -88,44 +106,125 @@
 }
 
 .profile_image_section {
-  padding: 15px;
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
+  padding: 25px;
+  border: 2px solid var(--border-light);
+  border-radius: 16px;
   background-color: var(--main-background);
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  text-align: center;
+  transition: border-color 0.3s ease;
+}
+
+.profile_image_section:hover {
+  border-color: var(--primary-accent);
 }
 
 .image_preview {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.image_preview img {
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.image_preview img:hover {
+  transform: scale(1.05);
 }
 
 .left-column,
 .right-column {
-  padding: 15px;
+  padding: 20px;
+}
+
+.left-column {
+  border-right: 1px solid var(--border-light);
 }
 
 .form-text {
   color: var(--text-muted) !important;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+.form-part-a,
+.form-part-b {
+  height: 100%;
+}
+
+.form-part-b {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* Custom file input styling */
+.Register-form input[type="file"] {
+  padding: 12px;
+  border: 2px dashed var(--border-light);
+  border-radius: 10px;
+  background-color: var(--main-background);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.Register-form input[type="file"]:hover {
+  border-color: var(--primary-accent);
+  background-color: rgba(122, 132, 113, 0.05);
+}
+
+.Register-form input[type="file"]:focus {
+  outline: none;
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 0.2rem rgba(122, 132, 113, 0.15);
+}
+
+/* Form group spacing */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+/* Column spacing improvements */
+.row {
+  margin-bottom: 1rem;
+}
+
+.row:last-child {
+  margin-bottom: 0;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .Register {
-    height: auto;
-    min-height: 80%;
+    min-height: 100vh;
     padding: 15px;
   }
 
   .Register-form {
     max-width: 100%;
+    padding: 2rem;
   }
 
   .left-column,
   .right-column {
-    padding: 10px;
+    padding: 15px;
+  }
+
+  .left-column {
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 20px;
+  }
+
+  .Register-header h1 {
+    font-size: 2rem;
+  }
+
+  .profile_image_section {
+    margin-top: 20px;
   }
 }
 
@@ -133,4 +232,54 @@
   .Register-form {
     max-width: 100%;
   }
+
+  .left-column {
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 30px;
+    margin-bottom: 20px;
+  }
+}
+
+@media (min-width: 993px) {
+  .right-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+
+/* Animation for form elements */
+.Register-form .form-control,
+.Register-button,
+.profile_image_section {
+  animation: slideUp 0.6s ease forwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger animation delays */
+.Register-form .form-control:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.Register-form .form-control:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.Register-form .form-control:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.profile_image_section {
+  animation-delay: 0.4s;
+}
+.Register-button {
+  animation-delay: 0.5s;
 }

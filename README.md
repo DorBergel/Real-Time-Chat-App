@@ -1,70 +1,143 @@
-# Getting Started with Create React App
+# Real-Time Chat Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A full-stack real-time chat application built with Node.js/Express backend and React frontend, featuring WebSocket communication, JWT authentication, and MongoDB database integration.
 
-## Available Scripts
+## Live Demo
 
-In the project directory, you can run:
+- **Frontend**: [https://adorable-youtiao-284ca3.netlify.app](https://adorable-youtiao-284ca3.netlify.app)
+- **Backend API**: [https://real-time-chat-app-4p7j.onrender.com](https://real-time-chat-app-4p7j.onrender.com)
 
-### `npm start`
+## Technology Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Backend Technologies
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: JWT (Access & Refresh tokens)
+- **Real-time Communication**: WebSockets (native)
+- **Security**: bcrypt for password hashing
+- **File Upload**: Multer for profile pictures
+- **CORS**: Cross-origin resource sharing enabled
 
-### `npm test`
+### Frontend Technologies
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **Framework**: React.js
+- **Styling**: Bootstrap & React-Bootstrap
+- **Routing**: React Router
+- **WebSocket**: Native WebSocket API
+- **State Management**: React Hooks (useState, useEffect)
 
-### `npm run build`
+## System Architecture
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### API Design
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+The application follows RESTful principles with the following endpoint structure:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- **Authentication**: `/api/auth/` - User registration, login, and token management
+- **User Management**: `/api/user/` - Profile operations and user data
+- **Chat Operations**: `/api/chat/` - Chat room creation and management
+- **Message Handling**: `/api/message/` - Message operations and history
 
-### `npm run eject`
+### Real-time Communication
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+WebSocket implementation provides:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- **Instant Message Delivery**: Real-time bidirectional communication
+- **User Presence Tracking**: Online/offline status indicators
+- **Typing Indicators**: Live typing status updates
+- **Chat Notifications**: New chat creation alerts
+- **Message Status**: Read receipts and delivery confirmation
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Database Design
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+**Users Collection**
 
-## Learn More
+- Authentication credentials and security data
+- User profiles and personal information
+- Contact lists and relationship management
+- Chat references and permissions
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+**Chats Collection**
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- Support for both group and private conversations
+- Participant management and roles
+- Last message tracking and metadata
+- Chat settings and configurations
 
-### Code Splitting
+**Messages Collection**
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+- Message content and formatting
+- Author information and timestamps
+- Read status and delivery tracking
+- Message threading and replies
 
-### Analyzing the Bundle Size
+### Security Implementation
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+**Authentication & Authorization**
 
-### Making a Progressive Web App
+- Dual-token JWT system (access and refresh tokens)
+- Secure password hashing using bcrypt
+- Session management and token rotation
+- Middleware-based route protection
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+**Data Validation & Protection**
 
-### Advanced Configuration
+- Password strength requirements and validation
+- Age verification system (18+ requirement)
+- Input sanitization and SQL injection prevention
+- CORS configuration for cross-origin security
+- Rate limiting and request throttling
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Key Features
 
-### Deployment
+### Core Functionality
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+- User registration and authentication
+- Real-time messaging with instant delivery
+- Private and group chat support
+- File sharing and media upload
+- Message history and search
+- User profiles with customizable avatars
 
-### `npm run build` fails to minify
+### User Experience
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Responsive design for all devices
+- Intuitive chat interface
+- Typing indicators and read receipts
+- Online presence indicators
+- Push notifications for new messages
+- Dark/light theme support
+
+### Administrative Features
+
+- User management and moderation
+- Chat analytics and reporting
+- Content filtering and spam protection
+- Backup and data export capabilities
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v14 or higher)
+- MongoDB (local or cloud instance)
+- npm or yarn package manager
+
+### Installation
+
+1. Clone the repository
+2. Install backend dependencies
+3. Configure environment variables
+4. Install frontend dependencies
+5. Start the development servers
+
+### Environment Configuration
+
+Required environment variables for backend:
+
+- Database connection string
+- JWT secret keys
+- CORS origins
+- File upload settings
+- WebSocket configuration
