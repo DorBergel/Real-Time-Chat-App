@@ -7,6 +7,10 @@ A full-stack real-time chat application built with Node.js/Express backend and R
 - **Frontend**: [https://adorable-youtiao-284ca3.netlify.app](https://adorable-youtiao-284ca3.netlify.app)
 - **Backend API**: [https://real-time-chat-app-4p7j.onrender.com](https://real-time-chat-app-4p7j.onrender.com)
 
+## Users for testing:
+1. dornow ; Dor123!@#
+2. dortest ; Dortest123!@#
+
 ## Technology Stack
 
 ### Backend Technologies
